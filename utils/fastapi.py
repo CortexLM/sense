@@ -111,5 +111,5 @@ class DaemonAPI:
 
     def run(self, host="127.0.0.1", port=8000):
         import uvicorn
-        logging.success(f"Daemon started at address {host} on port {port}")
+        logging.success(f"Sense started at address {host} on port {port}")
         uvicorn.run(self.app, host=host, port=port, log_level="error")
