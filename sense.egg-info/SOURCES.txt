@@ -7,4 +7,5 @@ sense.egg-info/PKG-INFO
 sense.egg-info/SOURCES.txt
 sense.egg-info/dependency_links.txt
 sense.egg-info/entry_points.txt
+sense.egg-info/requires.txt
 sense.egg-info/top_level.txt

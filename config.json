@@ -1,11 +1,11 @@
 {
     "api_tokens": [
-        "cWFltOT4wDdi8YKbnSgUsUS67lPxnCO4yRRWQXAe9U9n55C8In5Eu6hGjaP3aylW"
+        "oGrJzAD8HncaSLp92V7Eh7cDpNGRQ4Li11SH8vpoiL7IKVDXsl0rti4j3dWRwZtn"
     ],
     "models": {
         "diffusions": [
             {
-                "gpu_id": "0",
+                "gpu_id": "y",
                 "modelName": "dataautogpt3/OpenDalleV1.1",
                 "modelType": "Text2Image"
             },
@@ -16,7 +16,7 @@
         ],
         "turbomind": [
             {
-                "gpu_id": "0",
+                "gpu_id": "y",
                 "modelName": "CortexLM/qwen-72b-chat-w4",
                 "modelType": "qwen-14b"
             }

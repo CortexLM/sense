@@ -1,7 +1,12 @@
 from setuptools import setup, find_packages
 
 # Assurez-vous d'avoir importé les fonctions nécessaires de votre projet
-
+def parse_requirements():
+    with open("requirements.txt", 'r') as file:
+        requirements = file.readlines()
+        requirements = [r.strip() for r in requirements]
+        requirements = [r for r in requirements if r and not r.startswith('#')]
+    return requirements
 setup(
     name='sense',
     version='0.0.1',
@@ -11,7 +16,7 @@ setup(
     author_email='flavia@cortex.foundation',
     packages=find_packages(),
     install_requires=[
-
+        parse_requirements()
     ],
     entry_points={
         'console_scripts': [
