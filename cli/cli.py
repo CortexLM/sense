@@ -19,6 +19,7 @@ class CLI(object):
 
         # Path to the init.json file within the .sense directory
         init_json_path = os.path.join(sense_dir, 'init.json')
+        os.makedirs(sense_dir, exist_ok=True)
         with open(init_json_path, 'a') as file:
             pass
         if os.path.isfile(version_file_path):
