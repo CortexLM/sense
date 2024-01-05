@@ -52,8 +52,7 @@ if [[ $cuda_version == 11.* ]]; then
 elif [[ $cuda_version == 12.* ]]; then
     pip3 install xformers torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 -U
 else
-    echo -e "${RED}Unsupported CUDA version${NC}"
-    exit 1
+    pip3 install xformers torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 -U
 fi
 
 # Step 6: Installation of Project Dependencies
