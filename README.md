@@ -53,7 +53,7 @@ This repository includes a daemon service designed to automate the inference pro
 
 ### **Validators :**
 
-1x80GB GPU or 2x48GB GPU
+1x80GB GPU or 3x48GB GPU
 
 Storage: 300GB
 
