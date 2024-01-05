@@ -48,9 +48,9 @@ echo -e "${BLUE}Step 5: Detecting CUDA Version and Installing PyTorch${NC}"
 cuda_version=$(nvcc --version | grep "release" | sed 's/.*release \(.*\),.*/\1/')
 echo "CUDA Version Detected: $cuda_version"
 if [[ $cuda_version == 11.* ]]; then
-    pip3 install xformers torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+    pip3 install xformers torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 -U
 elif [[ $cuda_version == 12.* ]]; then
-    pip3 install xformers torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+    pip3 install xformers torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 -U
 else
     echo -e "${RED}Unsupported CUDA version${NC}"
     exit 1
