@@ -59,6 +59,12 @@ fi
 # Step 6: Installation of Project Dependencies
 echo -e "${BLUE}Step 6: Installing Project Dependencies${NC}"
 pip3 install ninja
+if [[ $cuda_version == 11.* ]]; then
+    pip3 install https://github.com/chengzeyi/stable-fast/releases/download/v1.0.1/stable_fast-1.0.1+torch212cu118-cp310-cp310-manylinux2014_x86_64.whl
+elif [[ $cuda_version == 12.* ]]; then
+    pip3 install https://github.com/chengzeyi/stable-fast/releases/download/v1.0.1/stable_fast-1.0.1+torch212cu121-cp310-cp310-manylinux2014_x86_64.whl
+fi
+
 pip3 install -r requirements.txt
 
 echo -e "${BLUE}To access the conda environment, type conda activate sense.${NC}"
