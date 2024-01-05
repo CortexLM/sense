@@ -5,9 +5,9 @@ import utils.system as system
 import time
 from utils.fastapi import DaemonAPI
 def main():
-    logging.warning("The daemon server must not be on the same server as the miner/validator.")
+    logging.warning("Sense server must not be on the same server as the miner/validator.")
     time.sleep(2)
-    logging.info("Initializing Flavia Subnet [ρ] Daemon...")
+    logging.info("[⚡️] Initializing Sense...")
     system.display_system_info()
     model = ModelManager()
     api = DaemonAPI(model=model)

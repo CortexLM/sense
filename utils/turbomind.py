@@ -153,7 +153,7 @@ class TurboMind:
         environment = os.environ.copy()
         environment["CUDA_VISIBLE_DEVICES"] = self.gpu_id
         
-        command = f"lmdeploy serve api_server {self.base_directory}{self.model_path} --model-name flavia --server_name {self.host} --server_port {self.port} --tp {count_gpu(self.gpu_id)}"
+        command = f"lmdeploy serve api_server {self.base_directory}{self.model_path} --model-name sense --server_name {self.host} --server_port {self.port} --tp {count_gpu(self.gpu_id)}"
         logging.info(f'Spawning 1 process for {self.model_path}')
 
         try:
