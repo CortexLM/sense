@@ -1,6 +1,6 @@
 <div align="center">
 
-# **⚡️ Flavia - Daemon for Flavia ρ Subnet**
+# **⚡️ Sense - Daemon for Flavia Project**
 Daemon for Model Inference and Auto-Scaling for ρ Subnet
 
 [![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)](https://discord.gg/bittensor)
