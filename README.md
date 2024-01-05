@@ -51,7 +51,7 @@ This repository includes a daemon service designed to automate the inference pro
 
 **Run:**
 
-```pm2 start run.py --host 0.0.0.0 --port 8080 --interpreter python3```
+```pm2 start "python3 run.py --host 0.0.0.0 --port 8080" --name sense```
 
 ## 📋 Requirements
 
