@@ -66,6 +66,7 @@ elif [[ $cuda_version == 12.* ]]; then
 fi
 
 pip3 install -r requirements.txt
+pip3 install -e .
 
 echo -e "${BLUE}To access the conda environment, type conda activate sense.${NC}"
 echo -e "${BLUE}Installation completed successfully.${NC}"
