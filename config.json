@@ -1,8 +1,9 @@
 {
+    "api_tokens": [],
     "models": {
         "diffusions": [
             {
-                "gpu_id": "2",
+                "gpu_id": "4",
                 "modelName":"dataautogpt3/OpenDalleV1.1",
                 "modelType":"Text2Image"
             },
@@ -13,7 +14,7 @@
         ],
         "turbomind": [
             {
-                "gpu_id": "0,1",
+                "gpu_id": "0,1,2,3",
                 "modelName":"CortexLM/qwen-72b-chat-w4",
                 "modelType":"qwen-14b"
             }

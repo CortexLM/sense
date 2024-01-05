@@ -1,9 +1,12 @@
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from utils.logging import logging
-from fastapi.responses import StreamingResponse
+import typing as t
+from starlette import status
 
+from fastapi.responses import StreamingResponse
+from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 class TextInteractive(BaseModel):
     prompt: str
     temperature: Optional[float] = 0.8
@@ -39,13 +42,28 @@ class ImageToImage(BaseModel):
     seed: Optional[int] = -1 
     batch_size: Optional[int] = 1
 
+class UnauthorizedMessage(BaseModel):
+    detail: str = "Bearer token missing or unknown"
+    
 class DaemonAPI:
-    def __init__(self, model):
+
+    def __init__(self, model, api_tokens):
         self.app = FastAPI()
         self.models = model.models
-
-        @self.app.post("/diffusion/{model_name}/text_to_image")
-        async def diffusion_text_to_image(model_name: str, interact: TextToImage):
+        self.known_tokens = set(api_tokens)
+        get_bearer_token = HTTPBearer(auto_error=False)
+        async def get_token(
+            auth: t.Optional[HTTPAuthorizationCredentials] = Depends(get_bearer_token),
+        ) -> str:
+            # Simulate a database query to find a known token
+            if auth is None or (token := auth.credentials) not in self.known_tokens:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=UnauthorizedMessage().detail,
+                )
+            return token
+        @self.app.post("/diffusion/{model_name}/text_to_image", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
+        async def diffusion_text_to_image(model_name: str, interact: TextToImage, token: str = Depends(get_token)):
             model = self.models.get(model_name)
             if not model:
                 raise HTTPException(status_code=404, detail="Model not found")
@@ -61,8 +79,8 @@ class DaemonAPI:
             )
             return response
         
-        @self.app.post("/diffusion/{model_name}/image_to_image")
-        async def diffusion_image_to_image(model_name: str, interact: ImageToImage):
+        @self.app.post("/diffusion/{model_name}/image_to_image", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
+        async def diffusion_image_to_image(model_name: str, interact: ImageToImage, token: str = Depends(get_token)):
             model = self.models.get(model_name)
             if not model:
                 raise HTTPException(status_code=404, detail="Model not found")
@@ -78,8 +96,8 @@ class DaemonAPI:
             )
             return response
     
-        @self.app.post("/text_generation/{model_name}/chat/interactive")
-        async def text_generation_interactive(model_name: str, interact: TextInteractive):
+        @self.app.post("/text_generation/{model_name}/chat/interactive", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
+        async def text_generation_interactive(model_name: str, interact: TextInteractive, token: str = Depends(get_token)):
             model = self.models.get(model_name)
             if not model:
                 raise HTTPException(status_code=404, detail="Model not found")
@@ -94,8 +112,8 @@ class DaemonAPI:
             )
             return StreamingResponse(response)
 
-        @self.app.post("/text_generation/{model_name}/chat/completions")
-        async def text_generation_completions(model_name: str, interact: TextCompletion):
+        @self.app.post("/text_generation/{model_name}/chat/completions", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
+        async def text_generation_completions(model_name: str, interact: TextCompletion, token: str = Depends(get_token)):
             model = self.models.get(model_name)
             if not model:
                 raise HTTPException(status_code=404, detail="Model not found")
