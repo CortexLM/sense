@@ -49,6 +49,10 @@ This repository includes a daemon service designed to automate the inference pro
 
 ```sense config init```
 
+**Run:**
+
+```pm2 start run.py --host 0.0.0.0 --port 8080 --interpreter python3```
+
 ## 📋 Requirements
 
 ### **Validators :**
