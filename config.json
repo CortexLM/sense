@@ -1,22 +1,24 @@
 {
-    "api_tokens": [],
+    "api_tokens": [
+        "cWFltOT4wDdi8YKbnSgUsUS67lPxnCO4yRRWQXAe9U9n55C8In5Eu6hGjaP3aylW"
+    ],
     "models": {
         "diffusions": [
             {
-                "gpu_id": "4",
-                "modelName":"dataautogpt3/OpenDalleV1.1",
-                "modelType":"Text2Image"
+                "gpu_id": "0",
+                "modelName": "dataautogpt3/OpenDalleV1.1",
+                "modelType": "Text2Image"
             },
             {
-                "modelName":"stabilityai/stable-diffusion-xl-refiner-1.0",
-                "modelType":"Image2Image"
+                "modelName": "stabilityai/stable-diffusion-xl-refiner-1.0",
+                "modelType": "Image2Image"
             }
         ],
         "turbomind": [
             {
-                "gpu_id": "0,1,2,3",
-                "modelName":"CortexLM/qwen-72b-chat-w4",
-                "modelType":"qwen-14b"
+                "gpu_id": "0",
+                "modelName": "CortexLM/qwen-72b-chat-w4",
+                "modelType": "qwen-14b"
             }
         ]
     }

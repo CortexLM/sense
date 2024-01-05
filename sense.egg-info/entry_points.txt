@@ -1,0 +1,2 @@
+[console_scripts]
+sense = cli:run

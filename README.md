@@ -37,6 +37,18 @@ This repository includes a daemon service designed to automate the inference pro
 
 ```./install.sh```
 
+**Initialize conda environment:**
+
+```conda activate sense```
+
+**Init Sense Directory:**
+
+```cd /srv/sense && sense init```
+
+**Generate config:**
+
+```sense config init```
+
 ## 📋 Requirements
 
 ### **Validators :**
