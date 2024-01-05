@@ -23,17 +23,19 @@ This repository includes a daemon service designed to automate the inference pro
 
 ## 🔧 Installation
 
-**Clone the Repository:** Begin by cloning the Flavia repository to your local machine. Open your terminal and run the following command:
+**To install the script, follow these steps:**
 
-```git clone https://github.com/CortexLM/sense.git```
+**Download the script:**
 
-**Navigate to the Project Directory:** Change your current working directory to the Flavia project:
+```wget -q https://raw.githubusercontent.com/CortexLM/sense/0.0.1/install.sh```
 
-```cd flavia```
+**Make the script executable:**
 
-**Install the Project:** Use pip to install the project. Run:
+```chmod  +x install.sh```
 
-```pip install -r requirements.txt```
+**Run the auto-installer:**
+
+```./install.sh```
 
 ## 📋 Requirements
 
