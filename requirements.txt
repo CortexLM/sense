@@ -1,0 +1,10 @@
+torch
+loguru
+huggingface_hub
+lmdeploy[serve]
+psutil
+gputil
+stable-fast
+diffusers
+xformers
+accelerate
