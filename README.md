@@ -39,6 +39,8 @@ This repository includes a daemon service designed to automate the inference pro
 
 **Initialize conda environment:**
 
+```bash```
+
 ```conda activate sense```
 
 **Init Sense Directory:**
@@ -48,6 +50,19 @@ This repository includes a daemon service designed to automate the inference pro
 **Generate config:**
 
 ```sense config init```
+
+
+**Install Node.js and PM2:**
+
+```curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash```
+
+```export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"```
+```[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"```
+
+```nvm install --lts```
+
+```npm i pm2 -g```
+
 
 
 Then generate an API key, which will ask you to allocate the GPUs. You can only allocate one GPU for the Diffusion model, and (1,2 or 4 GPUs). To allocate them, simply enter the GPU ID.
