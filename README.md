@@ -27,7 +27,7 @@ This repository includes a daemon service designed to automate the inference pro
 
 **Download the script:**
 
-```wget -q https://raw.githubusercontent.com/CortexLM/sense/master/install.sh```
+```wget -q https://raw.githubusercontent.com/CortexLM/sense/0.0.1/install.sh```
 
 **Make the script executable:**
 
@@ -48,6 +48,13 @@ This repository includes a daemon service designed to automate the inference pro
 **Generate config:**
 
 ```sense config init```
+
+
+Then generate an API key, which will ask you to allocate the GPUs. You can only allocate one GPU for the Diffusion model, and (1,2 or 4 GPUs). To allocate them, simply enter the GPU ID.
+
+For 5 GPUs :
+Diffusions: ```0```
+Turbomind ```1,2,3,4```
 
 **Run:**
 
