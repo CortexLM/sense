@@ -165,7 +165,7 @@ class TurboMind:
             logging.error(f"An error occurred: {e}")
 
     # Function to wait for the TurboMind model to be ready
-    def wait_for_tb_model_status(self, timeout=120):
+    def wait_for_tb_model_status(self, timeout=240):
         start_time = time.time()
         url = f"http://{self.host}:{self.port}/v1/models"
         while True:
