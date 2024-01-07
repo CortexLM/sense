@@ -59,7 +59,7 @@ class SDFast:
         except Exception as e:
             logging.error(f"An error occurred: {e}")
 
-    def wait_for_sd_model_status(self, timeout=360):
+    def wait_for_sd_model_status(self, timeout=720):
         """
         Wait for the SDFast model to be ready.
 
