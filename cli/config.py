@@ -13,7 +13,8 @@ class SubCliConfig:
         # Lire le fichier JSON et accéder à la clé 'folder'
         try:
             with open(init_json_path, 'r') as file:
-                self.sense_dir = json.load(file).get('path', self.sense_dir)
+                print(json.load(file)['path'])
+                self._sense_dir = json.load(file).get('path', self.sense_dir)
         except Exception as e:
             pass
         self._config_data = {}
