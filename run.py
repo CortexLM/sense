@@ -72,7 +72,7 @@ def check_for_updates(process_name, interval=60):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Automatic Update Script with AutoUpdater and PM2.")
     parser.add_argument("--process_name", required=True, help="Name of the PM2 process to start.")
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
     check_and_install_pm2()
     update_and_start(args.process_name)
     check_for_updates(args.process_name)

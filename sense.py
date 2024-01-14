@@ -15,7 +15,6 @@ def main():
     parser = argparse.ArgumentParser(description="Run the Daemon API with specified host and port")
     parser.add_argument('--host', type=str, default='0.0.0.0', help='Host for the API server')
     parser.add_argument('--port', type=int, default=8080, help='Port for the API server')
-    parser.add_argument('--auto_update', type=bool, default=True, help='Auto-update')
     args = parser.parse_args()
 
     
