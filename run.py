@@ -39,15 +39,24 @@ def update_and_start(process_name, interval=60):
     updater.check_update()
 
     # Get all arguments passed to your script
-    process_name_index = sys.argv.index("--process_name") if "--process_name" in sys.argv else -1
+    sys.argv[1:] = ['--process_name', 'sense', '--host', '127.0.0.1', '--port', '6666']
 
-    if process_name_index != -1:
-        # Remove the --process_name argument and everything that comes after it
-        arguments = sys.argv[1:process_name_index]
-    else:
-        arguments = sys.argv[1:]
+    # Initialize an empty list to store the arguments
+    arguments = []
 
-    # Use subprocess to start the PM2 process with the arguments
+    # Flag to indicate whether we should skip the next argument (the value after "--process_name")
+    skip_next = False
+
+    for arg in sys.argv[1:]:
+        if skip_next:
+            # Skip the current argument if the flag is set
+            skip_next = False
+        elif arg == "--process_name":
+            # If we encounter "--process_name", set the flag to skip the next argument
+            skip_next = True
+        else:
+            # Otherwise, add the argument to the list of arguments
+            arguments.append(arg)
     pm2_command = f"pm2 start --interpreter python3 sense.py --name {process_name}"
     if arguments:
         pm2_command += f" -- {' '.join(arguments)}"
