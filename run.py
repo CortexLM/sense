@@ -37,10 +37,10 @@ class SenseProcessManager:
         run(pm2_command, shell=True, check=True)
 
     @staticmethod
-    def check_for_updates(process_name, interval=60):
+    def check_for_updates(process_name, interval=2):
         updater = AutoUpdater()
-
         while True:
+            time.sleep(interval)
             if updater.check_update():
                 pm2_command_stop = f"pm2 stop {process_name}"
                 process = Popen(pm2_command_stop, shell=True, stdout=PIPE, stderr=PIPE)
@@ -51,7 +51,6 @@ class SenseProcessManager:
 
                 logging.debug("PM2 process successfully restarted.")
 
-            time.sleep(interval)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Automatic Update Script with AutoUpdater and PM2.")

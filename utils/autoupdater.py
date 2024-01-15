@@ -9,8 +9,6 @@ class AutoUpdater:
         self.version_url = "https://raw.githubusercontent.com/CortexLM/sense/master/VERSION"
         self.local_version_file = "VERSION"
         self.local_version = None
-        with open(self.local_version_file, "r") as f:
-            self.local_version = f.read().strip()
         logger.success('Auto updater initialized')
         self.check_update()
 
@@ -24,14 +22,14 @@ class AutoUpdater:
         # Get the remote version from GitHub
         response = requests.get(self.version_url)
         remote_version = response.text.strip()
-
+        with open(self.local_version_file, "r") as f:
+            self.local_version = f.read().strip()
         if self.local_version != remote_version:
             # Versions are different, perform git pull
             subprocess.run(["git", "pull", "--force"], check=True)
             subprocess.run(["pip3", "install", "-r", "requirements.txt"], check=True)
             subprocess.run(["pip3", "install", "-e", "."], check=True)
             logger.info(f"old version {self.local_version} | Repo version {remote_version} | Now {remote_version} -> Updated.")
-            self.local_version = remote_version
             return True
         else:
             logger.info(f"Current version {self.local_version} | Repo version {remote_version} -> No update needed.")
