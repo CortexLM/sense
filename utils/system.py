@@ -79,12 +79,12 @@ def get_all_system_info():
             "machine": platform.machine(),
             "processor": platform.processor(),
             "python": sys.version,
-            "total_ram": f"{psutil.virtual_memory().total / (1024 ** 3):.2f} GB",
-            "free_ram": f"{psutil.virtual_memory().available / (1024 ** 3):.2f} GB",
+            "total_ram": psutil.virtual_memory().total / (1024 ** 2),
+            "free_ram": psutil.virtual_memory().available / (1024 ** 2),
             "disk_space": {
-                "total": f"{psutil.disk_usage('/').total / (1024 ** 3):.2f} GB",
-                "used": f"{psutil.disk_usage('/').used / (1024 ** 3):.2f} GB",
-                "free": f"{psutil.disk_usage('/').free / (1024 ** 3):.2f} GB"
+                "total": psutil.disk_usage('/').total / (1024 ** 2),
+                "used": psutil.disk_usage('/').used / (1024 ** 2),
+                "free": psutil.disk_usage('/').free / (1024 ** 2)
             },
             "gpus": get_gpu_info()
         }
