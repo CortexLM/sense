@@ -16,8 +16,22 @@ class Engine(str, Enum):
     TURBOMIND = 'turbomind'
     sdfast = 'sdfast'
 
+class TurboMindModel(str, Enum):
+    QWEN = 'qwen-14b'
+    LLAMA2 = 'llama2'
+    LLAMA = 'llama'
+    YI = 'yi'
+    SOLAR = 'solar'
+    INTERNLM_CHAT = "internlm-chat"
+    WIZARDLM = "wizardlm"
+    VICUNA = "vicuna"
+    INTERNLM = "internlm"
+    CODELLAMA = "codellama"
+    FALCON = "falcon"
+
 class Model(BaseModel):
     engine: Engine
+    tb_model_type: TurboMindModel = None
     n_gpus: str = "0" # GPU ids 0,1,2,3
 
 
@@ -104,7 +118,7 @@ class DaemonAPI:
 
         @self.app.post("/model/{model_name}/start", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
         async def start_model(model_name: str, interact: Model, token: str = Depends(get_token)):            
-            response_stream = model.allocate(engine=interact.engine, model_name=model_name, n_gpus=interact.n_gpus)
+            response_stream = model.allocate(engine=interact.engine, model_name=model_name, n_gpus=interact.n_gpus, tb_model_type=interact.tb_model_type)
 
             async def json_stream_generator(stream):
                 async for item in stream:

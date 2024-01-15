@@ -165,11 +165,11 @@ class TurboMind:
 
     # Function to run the model build process
     def run_build_process(self):
-        if not check_tp_config(f"{self.base_directory}/models/CortexLM-qwen-72b-chat-w4/workspace/triton_models/weights/config.ini", count_gpu(self.gpu_id)):
+        if not check_tp_config(f"{self.base_directory}{self.model_path}/workspace/triton_models/weights/config.ini", count_gpu(self.gpu_id)):
             environment = os.environ.copy()
             environment["CUDA_VISIBLE_DEVICES"] = self.gpu_id
             
-            command = f"lmdeploy convert --model-name {self.model_type} --model-path {self.base_directory}/models/CortexLM-qwen-72b-chat-w4/model --dst_path {self.base_directory}/models/CortexLM-qwen-72b-chat-w4/workspace --model-format awq --group-size 128 --tp {count_gpu(self.gpu_id)}"
+            command = f"lmdeploy convert --model-name {self.model_type} --model-path {self.base_directory}{self.model_path}model --dst_path {self.base_directory}{self.model_path}/workspace --model-format awq --group-size 128 --tp {count_gpu(self.gpu_id)}"
             logging.info(f'Spawning build model for {self.model_path}')
 
             try:
@@ -186,7 +186,7 @@ class TurboMind:
         environment = os.environ.copy()
         environment["CUDA_VISIBLE_DEVICES"] = self.gpu_id
         
-        command = f"lmdeploy serve api_server {self.base_directory}{self.model_path} --model-name sense --server_name {self.host} --server_port {self.port} --tp {count_gpu(self.gpu_id)}"
+        command = f"lmdeploy serve api_server {self.base_directory}{self.model_path}/workspace --model-name sense --server_name {self.host} --server_port {self.port} --tp {count_gpu(self.gpu_id)}"
         logging.info(f'Spawning 1 process for {self.model_path}')
 
         try:

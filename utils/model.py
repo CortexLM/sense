@@ -81,11 +81,11 @@ class ModelManager:
         tasks = [self.fetch_model(model_info.get('modelName')) for model_info in turbominds if model_info.get('modelName')]
         await asyncio.gather(*tasks)
 
-    async def allocate(self, engine, model_name, n_gpus):
+    async def allocate(self, engine, model_name, n_gpus, tb_model_type=None):
         model_name_fn = model_name.replace("/", "-").replace("|", "-")
         if engine == "turbomind":
-            model_path = f"/models/{model_name_fn}/workspace"
-            model_type = await self.check_turbomind_model_type(model_path)
+            model_path = f"/models/{model_name_fn}/"
+            model_type = tb_model_type
             yield {"status": "allocating", "message": "Model allocated"}
             logging.info(f'Allocate {model_path} (type = {model_type}) with {n_gpus} GPUs..')
             yield {"status": "downloading", "message": "Download model"}
@@ -122,8 +122,3 @@ class ModelManager:
                 logging.error(f'Error when allocating {model_path}.')
                 del self.models[model_name]
                 await sd.destroy()
-
-
-
-    async def check_turbomind_model_type(self, model_path):
-        return "qwen-14b"
