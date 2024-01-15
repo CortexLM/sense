@@ -12,13 +12,15 @@ class ModelManager:
     A class to manage downloading, configuring, and running various machine learning models asynchronously.
     """
 
-    def __init__(self):
+    def __init__(self, pulse=False):
         self.models = {}
         self.base_directory = os.getcwd()
         self.models_directory = os.path.join(self.base_directory, 'models')
         if not os.path.exists(self.models_directory):
             os.makedirs(self.models_directory)
         self.config = asyncio.run(self.load_config("config.json"))
+        if not pulse:
+             asyncio.run(self.load_models_from_config())
 
     async def load_config(self, config_path):
         """
