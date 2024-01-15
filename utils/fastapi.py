@@ -96,17 +96,17 @@ class DaemonAPI:
             if not model:
                 raise HTTPException(status_code=404, detail="Model not found or stopped")
 
-            queue = model['workers'].get('queue', 0)
             worker_count = len(model['workers'])
             
+            if worker_count == 0:
+                raise HTTPException(status_code=500, detail="No workers available for the model")
 
-            if queue >= worker_count:
-                n = 0
-                queue = 0  # Mettre à jour la queue
-
-            if worker_count != 1:
-                model['workers']['queue'] = n + 1
-            # Retourner le numéro du worker à utiliser
+            queue = model['workers'].get('queue', 0)         
+            if queue + 1 == worker_count:
+                queue = 0
+            else:
+                model['workers']['queue'] = queue + 1
+            
             return model['workers'][queue]
         @self.app.get("/system_info", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
         async def get_active_models(token: str = Depends(get_token)):
