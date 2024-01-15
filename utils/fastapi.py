@@ -43,7 +43,6 @@ class TextInteractive(BaseModel):
     top_p: Optional[float] = 0.9
     top_k: Optional[int] = 40
     max_tokens: Optional[int] = 512
-    refiner: Optional[bool] = False
 
 class TextCompletion(BaseModel):
     messages: List
@@ -51,7 +50,6 @@ class TextCompletion(BaseModel):
     repetition_penalty: Optional[float] = 1.1
     top_p: Optional[float] = 0.9
     max_tokens: Optional[int] = 512
-    refiner: Optional[bool] = False
 
 class TextToImage(BaseModel):
     prompt: str
