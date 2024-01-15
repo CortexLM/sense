@@ -73,6 +73,7 @@ class ModelManager:
     async def allocate_wrapper(self, engine, model_name, n_gpus, tb_model_type=None):
         async for chunk in self.allocate(engine=engine, model_name=model_name, n_gpus=n_gpus, tb_model_type=tb_model_type):
             logging.debug(chunk)
+    
     async def load_models_from_config(self):
         """
         Asynchronously load models as specified in the configuration.
@@ -84,10 +85,12 @@ class ModelManager:
         else:
             await self.load_turbomind(models.get('turbomind', []))
         gpu_ids = models["diffusions"][0]["gpu_id"].split(",")  # Split the GPU IDs string into a list
-        
-        self.allocate_wrapper(engine="turbomind", model_name="CortexLM|qwen-72b-chat-w4", n_gpus=models["turbomind"][0]["gpu_id"], tb_model_type="qwen-14b"),
-        for gpu_id in gpu_ids:
-            await self.allocate_wrapper(engine="sdfast", model_name="dataautogpt3|OpenDalleV1.1", n_gpus=gpu_id)
+
+        if self.config.get('mode', 1)==1:
+            self.allocate_wrapper(engine="turbomind", model_name="CortexLM|qwen-72b-chat-w4", n_gpus=models["turbomind"][0]["gpu_id"], tb_model_type="qwen-14b"),
+        else:
+            for gpu_id in gpu_ids:
+                await self.allocate_wrapper(engine="sdfast", model_name="dataautogpt3|OpenDalleV1.1", n_gpus=gpu_id)
 
 
     async def load_diffusions(self, diffusions):
