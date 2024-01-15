@@ -13,7 +13,7 @@ class SubCliConfig:
         # Lire le fichier JSON et accéder à la clé 'folder'
         try:
             with open(init_json_path, 'r') as file:
-                self.sense_dir = json.load(file).get('path', self.sense_dir)
+                self._sense_dir = json.load(file)['path']
         except Exception as e:
             pass
         self._config_data = {}
@@ -21,7 +21,7 @@ class SubCliConfig:
         self._models = {
             "diffusions": [
                 {
-                    "gpu_id": "4",
+                    "gpu_id": "4,5,6,7",
                     "modelName": "dataautogpt3/OpenDalleV1.1",
                     "modelType": "Text2Image"
                 },
@@ -62,7 +62,7 @@ class SubCliConfig:
             for model in self._models[category]:
                 if "gpu_id" in model:
                     if category == "diffusions":
-                        gpu_id = input(f"Enter a single GPU ID for the diffusion model {model['modelName']} (e.g., 0): ")
+                        gpu_id = input(f"Enter the GPU IDs for the diffusion model {model['modelName']} (e.g., 4,5,6,7): ")
                         model["gpu_id"] = gpu_id
                     elif category == "turbomind":
                         valid = False

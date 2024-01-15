@@ -9,10 +9,12 @@ import subprocess
 import torch
 import gc
 import configparser
-
+import signal
 import GPUtil
 import concurrent.futures
-
+import sys
+import aiohttp
+import shlex
 # Function to check if a string is valid JSON
 def is_valid_json(json_str):
     try:
@@ -52,26 +54,63 @@ def check_tp_config(file, tp):
     
     return False
 
+
+class TurboMindThread(threading.Thread):
+  def __init__(self, *args, **keywords):
+    threading.Thread.__init__(self, *args, **keywords)
+    self.killed = False
+ 
+  def start(self):
+    self.__run_backup = self.run
+    self.run = self.__run      
+    threading.Thread.start(self)
+ 
+  def __run(self):
+    sys.settrace(self.globaltrace)
+    self.__run_backup()
+    self.run = self.__run_backup
+ 
+  def globaltrace(self, frame, event, arg):
+    if event == 'call':
+      return self.localtrace
+    else:
+      return None
+ 
+  def localtrace(self, frame, event, arg):
+    if self.killed:
+      if event == 'line':
+        raise SystemExit()
+    return self.localtrace
+ 
+  def stop(self):
+    self.killed = True
+
 # Class for managing TurboMind
 class TurboMind:
-    def __init__(self, instance, model_path: str = None, host: str = "127.0.0.1", port: int = 9000, tp: int = 1, instance_num: int = 8, gpu_id=0, warm_up=True, model_type: str = "qwen-14b"):
+    def __init__(self, instance, model_name: str = None, model_path: str = None, host: str = "127.0.0.1", port: int = 9000, tp: int = 1, instance_num: int = 8, gpu_id=0, warm_up=True, tb_model_type: str = "qwen-14b"):
+        instance.models[model_name] = self
+        if model_name == "CortexLM|qwen-72b-chat-w4":
+            instance.models["Qwen|Qwen-72B-Chat"] = self
+        self.status = 0 # 0 = Not Ready | 1 = Ready
+        self.model_name = model_name
+        self.model_type = "turbomind"
+        self.process = None
         self.instance = instance
         self.model_path = model_path
         self.host = host
         self.port = port
         self.tp = tp
-        self.model_type = model_type
         self.instance_num = instance_num
-        self.tb_model = None
+        self.tb_model_type = tb_model_type
         self.gpu_id = gpu_id
         self.base_directory = instance.base_directory
         # Load TurboMind Model
         self.run_build_process()
-        self.start_process()
-        self.wait_for_tb_model_status()
-        if warm_up:
-            self.warm_up(gpu_id=self.gpu_id)
+        self.run_subprocess()
 
+    def is_running(self):
+        stat = os.system("ps -p %s &> /dev/null" % self.process.pid)
+        return stat == 0
     # Function to get the GPU memory usage
     def get_gpu_memory(self, gpu_id):
         try:
@@ -124,19 +163,13 @@ class TurboMind:
         except Exception as e:
             logging.error(f"An error occurred during warming up: {str(e)}")
 
-    # Function to start the TurboMind subprocess
-    def start_process(self):
-        # Create a thread to run the subprocess
-        self.process_thread = threading.Thread(target=self.run_subprocess)
-        self.process_thread.start()
-
     # Function to run the model build process
     def run_build_process(self):
-        if not check_tp_config(f"{self.base_directory}/models/CortexLM-qwen-72b-chat-w4/workspace/triton_models/weights/config.ini", count_gpu(self.gpu_id)):
+        if not check_tp_config(f"{self.base_directory}{self.model_path}/workspace/triton_models/weights/config.ini", count_gpu(self.gpu_id)):
             environment = os.environ.copy()
             environment["CUDA_VISIBLE_DEVICES"] = self.gpu_id
             
-            command = f"lmdeploy convert --model-name {self.model_type} --model-path {self.base_directory}/models/CortexLM-qwen-72b-chat-w4/model --dst_path {self.base_directory}/models/CortexLM-qwen-72b-chat-w4/workspace --model-format awq --group-size 128 --tp {count_gpu(self.gpu_id)}"
+            command = f"lmdeploy convert --model-name {self.tb_model_type} --model-path {self.base_directory}{self.model_path}/model --dst_path {self.base_directory}{self.model_path}/workspace --model-format awq --group-size 128 --tp {count_gpu(self.gpu_id)}"
             logging.info(f'Spawning build model for {self.model_path}')
 
             try:
@@ -153,38 +186,36 @@ class TurboMind:
         environment = os.environ.copy()
         environment["CUDA_VISIBLE_DEVICES"] = self.gpu_id
         
-        command = f"lmdeploy serve api_server {self.base_directory}{self.model_path} --model-name sense --server_name {self.host} --server_port {self.port} --tp {count_gpu(self.gpu_id)}"
+        command = f"lmdeploy serve api_server {self.base_directory}{self.model_path}/workspace --model-name sense --server_name {self.host} --server_port {self.port} --tp {count_gpu(self.gpu_id)}"
         logging.info(f'Spawning 1 process for {self.model_path}')
 
         try:
             # Execute the command using subprocess.run
-            subprocess.run(command, shell=True, check=False, env=environment)
+            self.process = subprocess.Popen(shlex.split(command), shell=False, env=environment, preexec_fn=os.setsid, stdout=subprocess.PIPE)
         except subprocess.CalledProcessError as e:
             logging.error(f"Error when executing the command: {e}")
         except Exception as e:
             logging.error(f"An error occurred: {e}")
 
     # Function to wait for the TurboMind model to be ready
-    def wait_for_tb_model_status(self, timeout=120):
-        start_time = time.time()
+    async def wait_for_tb_model_status(self, timeout=360):
+        start_time = asyncio.get_event_loop().time()
         url = f"http://{self.host}:{self.port}/v1/models"
-        while True:
-            current_time = time.time()
-            if current_time - start_time > timeout:
-                logging.error(f"Error: Timeout of {timeout} seconds exceeded for model {self.model_path} ({self.host}:{self.port})")
-                return False
+        async with aiohttp.ClientSession() as session:
+            while True:
+                current_time = asyncio.get_event_loop().time()
+                if current_time - start_time > timeout:
+                    logging.error(f"Timeout of {timeout} seconds exceeded for model {self.model_path} ({self.host}:{self.port})")
+                    return False
 
-            try:
-                response = requests.get(url)
-                if response.status_code == 200:
-                    data = response.json()
-                    self.tb_model = data['data'][0]['id']
-                    logging.info(f'Model {self.model_path} is ready')
-                    return True
-            except requests.exceptions.RequestException:
-                time.sleep(1)
-                pass
-
+                try:
+                    async with session.get(url) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            self.tb_model = data['data'][0]['id']
+                            return True
+                except aiohttp.ClientError:
+                    await asyncio.sleep(1)
     # Function for interactive completions
     def interactive(self, prompt=None, temperature=0.7, repetition_penalty=1.2, top_p=0.7, top_k=40, max_tokens=512):
         logging.debug(f"[-->] (Interactive) [{self.model_path}] Request for completion")
@@ -249,3 +280,16 @@ class TurboMind:
 
         streaming_duration = round(time.time() - stream_start_time, 2)
         logging.debug(f"[<--] (Completion) [{self.model_path}] Completion done in {streaming_duration}s")
+
+    async def destroy(self):
+        if self.process:
+            try:
+                logging.info(f"Stop {self.model_path} model..")
+                del self.instance.models[self.model_name]
+                os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
+                await asyncio.sleep(2)
+                logging.info(f"{self.model_path} model stopped.")
+            except Exception as e:
+                logging.error(f"Error when stopping {self.model_path} model: {e}")
+        else:
+            logging.info(f"{self.model_path} model is not running.")

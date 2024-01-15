@@ -1,29 +1,61 @@
 import argparse
-from utils.logging import logging
-from utils.model import ModelManager
-import json
-import utils.system as system
 import time
-from utils.fastapi import DaemonAPI
+from utils.autoupdater import AutoUpdater
+from subprocess import Popen, PIPE, run
+import sys
+from utils.logging import logging
+import subprocess
 
-def main():
-    parser = argparse.ArgumentParser(description="Run the Daemon API with specified host and port")
-    parser.add_argument('--host', type=str, default='0.0.0.0', help='Host for the API server')
-    parser.add_argument('--port', type=int, default=8080, help='Port for the API server')
-    args = parser.parse_args()
+class SenseProcessManager:
+    def __init__(self):
+        pass
 
-    logging.warning("Sense server must not be on the same server as the miner/validator.")
-    time.sleep(2)
+    @staticmethod
+    def update_and_start(process_name, interval=60):
+        updater = AutoUpdater()
+        updater.check_update()
 
-    logging.info("[⚡️] Initializing Sense...")
+        # Initialize an empty list to store the arguments
+        arguments = []
 
-    with open('config.json', 'r') as config_file:
-        config = json.load(config_file)
-        
-    system.display_system_info()
-    model = ModelManager()
-    api = DaemonAPI(model=model, api_tokens=config['api_tokens'])
-    api.run(host=args.host, port=args.port)
+        # Flag to indicate whether we should skip the next argument (the value after "--process_name")
+        skip_next = False
+
+        for arg in sys.argv[1:]:
+            if skip_next:
+                # Skip the current argument if the flag is set
+                skip_next = False
+            elif arg == "--process_name":
+                # If we encounter "--process_name", set the flag to skip the next argument
+                skip_next = True
+            else:
+                # Otherwise, add the argument to the list of arguments
+                arguments.append(arg)
+        pm2_command = f"pm2 -f start --interpreter python3 sense.py --name {process_name}"
+        if arguments:
+            pm2_command += f" -- {' '.join(arguments)}"
+        run(pm2_command, shell=True, check=True)
+
+    @staticmethod
+    def check_for_updates(process_name, interval=2):
+        updater = AutoUpdater()
+        while True:
+            time.sleep(interval)
+            if updater.check_update():
+                pm2_command_stop = f"pm2 stop {process_name}"
+                process = Popen(pm2_command_stop, shell=True, stdout=PIPE, stderr=PIPE)
+                process.communicate()
+                pm2_command_start = f"pm2 start {process_name}"
+                process = Popen(pm2_command_start, shell=True, stdout=PIPE, stderr=PIPE)
+                process.communicate()
+
+                logging.debug("PM2 process successfully restarted.")
+
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Automatic Update Script with AutoUpdater and PM2.")
+    parser.add_argument("--process_name", required=True, help="Name of the PM2 process to start.")
+    args, unknown = parser.parse_known_args()
+    updater_manager = SenseProcessManager()
+    updater_manager.update_and_start(args.process_name)
+    updater_manager.check_for_updates(args.process_name)
