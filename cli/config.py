@@ -64,12 +64,8 @@ class SubCliConfig:
             for model in self._models[category]:
                 if "gpu_id" in model:
                     if category == "diffusions":
-                        gpu_ids = input(f"Enter the GPU IDs for the diffusion model {model['modelName']} (e.g., 0,1 or 2,3,4,5): ").split(',')
-                            if len(gpu_ids) in [1, 2, 4, 8, 16]:
-                                model["gpu_id"] = ','.join(gpu_ids)
-                                valid = True
-                            else:
-                                print("Invalid input. The number of GPUs must be 1, 2, 4, 8, 16, etc.")
+                        gpu_id = input(f"Enter the GPU IDs for the diffusion model {model['modelName']} (e.g., 4,5,6,7): ")
+                        model["gpu_id"] = gpu_id
                     elif category == "turbomind":
                         valid = False
                         while not valid:
