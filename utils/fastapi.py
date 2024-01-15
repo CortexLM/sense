@@ -102,7 +102,11 @@ class DaemonAPI:
                 raise HTTPException(status_code=500, detail="No workers available for the model")
 
             queue = model['workers'].get('queue', 0)
-            queue = queue % worker_count
+            
+            if queue + 1 == worker_count:
+                queue = 0
+            else:
+                queue += 1
             
             model['workers']['queue'] = queue
             
