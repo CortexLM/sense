@@ -22,9 +22,8 @@ def main():
     parser.add_argument("--pulse", default=False, help="Activate Pulse Load Balancer")
     args = parser.parse_args()
 
-    
     logging.warning("Sense server must not be on the same server as the miner/validator.")
-    time.sleep(2)
+    
     logging.info("Initializing Sense..")
     try:
         with open('config.json', 'r') as config_file:
