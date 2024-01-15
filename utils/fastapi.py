@@ -100,11 +100,11 @@ class DaemonAPI:
             worker_count = len(model['workers'])
             
 
-            if queue >= worker_count:
-                model['workers']['queue'] = 0 
-
             if worker_count != 1:
-                model['workers']['queue'] = queue + 1
+                if worker_count == (len(model['workers']) - 1):
+                    model['workers']['queue'] = 0
+                else:
+                    model['workers']['queue'] = queue + 1
             # Retourner le numéro du worker à utiliser
             return model['workers'][queue]
         @self.app.get("/system_info", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
