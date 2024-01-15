@@ -89,7 +89,8 @@ class TurboMindThread(threading.Thread):
 class TurboMind:
     def __init__(self, instance, model_name: str = None, model_path: str = None, host: str = "127.0.0.1", port: int = 9000, tp: int = 1, instance_num: int = 8, gpu_id=0, warm_up=True, tb_model_type: str = "qwen-14b"):
         instance.models[model_name] = self
-
+        if model_name == "CortexLM|qwen-72b-chat-w4":
+            instance.models["Qwen|Qwen-72B-Chat"] = self
         self.status = 0 # 0 = Not Ready | 1 = Ready
         self.model_name = model_name
         self.model_type = "turbomind"
