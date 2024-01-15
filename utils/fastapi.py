@@ -98,10 +98,7 @@ class DaemonAPI:
 
             queue = model['workers'].get('queue', 0)
             worker_count = len(model['workers'])
-
-            # Calculer l'indice du worker à utiliser
-            if worker_count != 1:
-                n = queue + 1
+            
 
             # Si n est supérieur au nombre de travailleurs, revenir au premier worker
             if n >= worker_count:
@@ -110,7 +107,8 @@ class DaemonAPI:
 
             # Mettre à jour la queue dans le modèle
             model['workers']['queue'] = n
-
+            if worker_count != 1:
+                model['workers']['queue'] = n + 1
             # Retourner le numéro du worker à utiliser
             return model['workers'][n]
         @self.app.get("/system_info", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
