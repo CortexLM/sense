@@ -103,7 +103,7 @@ class DaemonAPI:
 
             queue = model['workers'].get('queue', 0)         
             if queue + 1 == worker_count:
-                queue = 0
+                pass
             else:
                 model['workers']['queue'] = queue + 1
             
