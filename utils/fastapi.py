@@ -2,6 +2,7 @@ from typing import List, Optional
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from utils.logging import logging
+from utils.system import get_all_system_info
 import typing as t
 from starlette import status
 from fastapi.encoders import jsonable_encoder
@@ -77,7 +78,12 @@ class DaemonAPI:
                 )
             return token
         
+        @self.app.get("/system_info", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
+        async def get_active_models(token: str = Depends(get_token)):
+            models_list = jsonable_encoder(get_all_system_info())
 
+            return JSONResponse(content=models_list)
+        
         @self.app.get("/models", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
         async def get_active_models(token: str = Depends(get_token)):
             models_list = jsonable_encoder(list(self.models.keys()))

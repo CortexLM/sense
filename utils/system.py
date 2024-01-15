@@ -6,6 +6,7 @@ import sys
 import psutil
 from utils.logging import logging
 import GPUtil
+import uuid    
 
 def terminate_all_process():
     try:
@@ -49,3 +50,54 @@ def display_system_info():
     
     for key, value in info.items():
         logging.info(f"{key}: {value}")
+
+def read_cgroup_file(file_path):
+    """
+    Reads a value from a cgroup file and returns it.
+    """
+    try:
+        with open(file_path, 'r') as file:
+            return file.read().strip()
+    except Exception as e:
+        return 0
+
+def is_running_in_docker():
+    """
+    Check if the script is running in a Docker container.
+    """
+    return os.path.exists('/.dockerenv')
+
+def get_all_system_info():
+    """
+    Gather and return all system information in JSON format, including cgroup-specific 
+    memory and CPU data.
+    """
+    try:
+        system_info = {
+            "os": platform.system(),
+            "version": platform.version(),
+            "machine": platform.machine(),
+            "processor": platform.processor(),
+            "python": sys.version,
+            "total_ram": f"{psutil.virtual_memory().total / (1024 ** 3):.2f} GB",
+            "free_ram": f"{psutil.virtual_memory().available / (1024 ** 3):.2f} GB",
+            "disk_space": {
+                "total": f"{psutil.disk_usage('/').total / (1024 ** 3):.2f} GB",
+                "used": f"{psutil.disk_usage('/').used / (1024 ** 3):.2f} GB",
+                "free": f"{psutil.disk_usage('/').free / (1024 ** 3):.2f} GB"
+            },
+            "gpus": get_gpu_info()
+        }
+        if is_running_in_docker():
+            system_info["docker"] = {
+                "cgroup_memory_usage": read_cgroup_file('/sys/fs/cgroup/memory/memory.usage_in_bytes'),
+                "cgroup_memory_limit": read_cgroup_file('/sys/fs/cgroup/memory/memory.limit_in_bytes'),
+                "cgroup_cpu_quota": read_cgroup_file('/sys/fs/cgroup/cpu/cpu.cfs_quota_us'),
+                "cgroup_cpu_period": read_cgroup_file('/sys/fs/cgroup/cpu/cpu.cfs_period_us'),
+                "cgroup_cpu_usage": read_cgroup_file('/sys/fs/cgroup/cpu/cpuacct.usage')
+            }
+
+        return system_info
+    except Exception as e:
+        logging.error(f"Error in gathering system info: {e}")
+        return {"error": str(e)}
