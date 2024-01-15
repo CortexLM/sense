@@ -14,9 +14,6 @@ class SenseProcessManager:
         updater = AutoUpdater()
         updater.check_update()
 
-        # Get all arguments passed to your script
-        sys.argv[1:] = ['--process_name', 'sense', '--host', '127.0.0.1', '--port', '6666']
-
         # Initialize an empty list to store the arguments
         arguments = []
 
