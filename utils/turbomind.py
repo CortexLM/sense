@@ -285,9 +285,7 @@ class TurboMind:
         if self.process:
             try:
                 logging.info(f"Stop {self.model_path} model..")
-                model = self.instance.models.get(self.model_name)
-                if model:
-                    del model
+                del self.instance.models[self.model_name]
                 os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
                 await asyncio.sleep(2)
                 logging.info(f"{self.model_path} model stopped.")
