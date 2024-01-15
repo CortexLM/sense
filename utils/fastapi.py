@@ -101,12 +101,10 @@ class DaemonAPI:
             
 
             # Si n est supérieur au nombre de travailleurs, revenir au premier worker
-            if n >= worker_count:
+            if queue >= worker_count:
                 n = 0
                 queue = 0  # Mettre à jour la queue
 
-            # Mettre à jour la queue dans le modèle
-            model['workers']['queue'] = n
             if worker_count != 1:
                 model['workers']['queue'] = n + 1
             # Retourner le numéro du worker à utiliser
