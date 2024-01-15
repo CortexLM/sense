@@ -5,13 +5,15 @@ import os
 import json
 import subprocess
 from utils.logging import logging
+import signal
 
 class SDFast:
     """
     A class to manage the interface with the SDFast model for generating images from text or images.
     """
 
-    def __init__(self, instance, model_path: str = None, model_refiner: str = None, model_type: str = "t2i", host: str = "127.0.0.1", port: int = 9000, gpu_id=0, warm_up=True):
+    def __init__(self, instance, model_name: str = None, model_path: str = None, model_refiner: str = None, model_type: str = "t2i", host: str = "127.0.0.1", port: int = 9000, gpu_id=0, warm_up=True):
+        instance.models[model_name] = self
         """
         Initialize the SDFast model instance.
 
@@ -24,6 +26,9 @@ class SDFast:
         :param gpu_id: GPU ID to use for the model.
         :param warm_up: Flag to warm up the model on initialization.
         """
+        self.model_type = "turbomind"
+        self.model_name = model_name
+
         self.instance = instance
         self.model_path = model_path
         self.host = host
@@ -32,16 +37,9 @@ class SDFast:
         self.model_type = model_type
         self.model_refiner = model_refiner
         self.base_directory = instance.base_directory
-        self.start_process()
+        self.run_subprocess()
         if warm_up:
             self.wait_for_sd_model_status()
-
-    def start_process(self):
-        """
-        Start the SDFast model in a separate thread.
-        """
-        self.process_thread = threading.Thread(target=self.run_subprocess)
-        self.process_thread.start()
 
     def run_subprocess(self):
         """
@@ -53,7 +51,7 @@ class SDFast:
         logging.info(f'Spawning 1 process for {self.model_path}')
 
         try:
-            subprocess.run(command, shell=True, check=False, env=environment)
+            self.process = subprocess.Popen(command, shell=True, env=environment, preexec_fn=os.setsid, stdout=subprocess.PIPE)
         except subprocess.CalledProcessError as e:
             logging.error(f"Error when executing the command: {e}")
         except Exception as e:
@@ -141,3 +139,19 @@ class SDFast:
         else:
             logging.error(f"Failed to get response: {response.status_code}")
             return None
+        
+    def __del__(self):
+        if self.process:
+            try:
+                logging.info(f"Stop {self.model_path} model..")
+                model = self.instance.models.get(self.model_name)
+                if model:
+                    del model
+                os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
+                time.sleep(2)
+                logging.info(f"{self.model_path} model stopped.")
+            except Exception as e:
+                logging.error(f"Error when stopping {self.model_path} model: {e}")
+        else:
+            logging.info(f"{self.model_path} model is not running.")
+

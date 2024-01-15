@@ -7,6 +7,15 @@ import psutil
 from utils.logging import logging
 import GPUtil
 
+def terminate_all_process():
+    try:
+        logging.info("The daemon waits until all processes have finished to free up resources.")
+        current_process = psutil.Process()
+        for child in current_process.children(recursive=True):
+            child.terminate()
+        sys.exit(0)  
+    except SystemExit:
+        pass
 def get_gpu_info():
     """
     Get the GPU information if GPUtil is available. Filters GPUs based on CUDA_VISIBLE_DEVICES.

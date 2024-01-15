@@ -7,6 +7,7 @@ from huggingface_hub import snapshot_download
 from utils.turbomind import TurboMind
 from utils.sdfast import SDFast
 
+
 class ModelManager:
     """
     A class to manage downloading, configuring, and running various machine learning models.
@@ -88,5 +89,6 @@ class ModelManager:
         Initialize specific models after loading them.
         """
         models = self.config.get('models', {})
-        self.models["Qwen|Qwen-72B-Chat"] = TurboMind(self, model_path="/models/CortexLM-qwen-72b-chat-w4/workspace", gpu_id=models["turbomind"][0]["gpu_id"], model_type=models["turbomind"][0]["modelType"])
-        self.models["dataautogpt3|OpenDalleV1.1"] = SDFast(self, model_path="/models/dataautogpt3-OpenDalleV1.1/model", model_refiner="/models/stabilityai-stable-diffusion-xl-refiner-1.0/model", port=6001, model_type="t2i", gpu_id=models["diffusions"][0]["gpu_id"])
+        TurboMind(self, model_path="/models/CortexLM-qwen-72b-chat-w4/workspace", model_name="Qwen|Qwen-72B-Chat", gpu_id=models["turbomind"][0]["gpu_id"], model_type=models["turbomind"][0]["modelType"])
+        SDFast(self, model_path="/models/dataautogpt3-OpenDalleV1.1/model", model_name="dataautogpt3|OpenDalleV1.1", model_refiner="/models/stabilityai-stable-diffusion-xl-refiner-1.0/model", port=6001, model_type="t2i", gpu_id=models["diffusions"][0]["gpu_id"])
+        

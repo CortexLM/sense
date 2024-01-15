@@ -3,10 +3,14 @@ from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from utils.logging import logging
 import typing as t
+import json
 from starlette import status
-
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from fastapi.responses import StreamingResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
+import signal
+import utils.system as system
 class TextInteractive(BaseModel):
     prompt: str
     temperature: Optional[float] = 0.8
@@ -48,7 +52,7 @@ class UnauthorizedMessage(BaseModel):
 class DaemonAPI:
 
     def __init__(self, model, api_tokens):
-        self.app = FastAPI()
+        self.app = FastAPI(docs_url="/")
         self.models = model.models
         self.known_tokens = set(api_tokens)
         get_bearer_token = HTTPBearer(auto_error=False)
@@ -62,11 +66,33 @@ class DaemonAPI:
                     detail=UnauthorizedMessage().detail,
                 )
             return token
+        
+
+        @self.app.get("/models", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
+        async def get_active_models(token: str = Depends(get_token)):
+            models_list = jsonable_encoder(list(self.models.keys()))
+
+            return JSONResponse(content=models_list)
+        
+        @self.app.get("/model/{model_name}/stop", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
+        async def stop_model(model_name: str, token: str = Depends(get_token)):
+            model = self.models.get(model_name)
+            if not model:
+                raise HTTPException(status_code=404, detail="Model not found or stopped")
+            
+            try:
+                model.__del__()
+                return {"status": "success", "message": "Model stopped"}
+            except:
+                return {"status": "error", "message": "Model not stopped"}
+
+
+
         @self.app.post("/diffusion/{model_name}/text_to_image", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
         async def diffusion_text_to_image(model_name: str, interact: TextToImage, token: str = Depends(get_token)):
             model = self.models.get(model_name)
             if not model:
-                raise HTTPException(status_code=404, detail="Model not found")
+                raise HTTPException(status_code=404, detail="Model not found or stopped")
 
             response = model.t2i(
                 prompt=interact.prompt,
@@ -83,7 +109,7 @@ class DaemonAPI:
         async def diffusion_image_to_image(model_name: str, interact: ImageToImage, token: str = Depends(get_token)):
             model = self.models.get(model_name)
             if not model:
-                raise HTTPException(status_code=404, detail="Model not found")
+                raise HTTPException(status_code=404, detail="Model not found or stopped")
 
             response = model.i2i(
                 image=interact.image,
@@ -100,7 +126,7 @@ class DaemonAPI:
         async def text_generation_interactive(model_name: str, interact: TextInteractive, token: str = Depends(get_token)):
             model = self.models.get(model_name)
             if not model:
-                raise HTTPException(status_code=404, detail="Model not found")
+                raise HTTPException(status_code=404, detail="Model not found or stopped")
 
             response = model.interactive(
                 prompt=interact.prompt,
@@ -116,7 +142,7 @@ class DaemonAPI:
         async def text_generation_completions(model_name: str, interact: TextCompletion, token: str = Depends(get_token)):
             model = self.models.get(model_name)
             if not model:
-                raise HTTPException(status_code=404, detail="Model not found")
+                raise HTTPException(status_code=404, detail="Model not found or stopped")
 
             response = model.completion(
                 messages=interact.messages,

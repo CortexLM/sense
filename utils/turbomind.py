@@ -9,9 +9,10 @@ import subprocess
 import torch
 import gc
 import configparser
-
+import signal
 import GPUtil
 import concurrent.futures
+import sys
 
 # Function to check if a string is valid JSON
 def is_valid_json(json_str):
@@ -52,9 +53,45 @@ def check_tp_config(file, tp):
     
     return False
 
+
+class TurboMindThread(threading.Thread):
+  def __init__(self, *args, **keywords):
+    threading.Thread.__init__(self, *args, **keywords)
+    self.killed = False
+ 
+  def start(self):
+    self.__run_backup = self.run
+    self.run = self.__run      
+    threading.Thread.start(self)
+ 
+  def __run(self):
+    sys.settrace(self.globaltrace)
+    self.__run_backup()
+    self.run = self.__run_backup
+ 
+  def globaltrace(self, frame, event, arg):
+    if event == 'call':
+      return self.localtrace
+    else:
+      return None
+ 
+  def localtrace(self, frame, event, arg):
+    if self.killed:
+      if event == 'line':
+        raise SystemExit()
+    return self.localtrace
+ 
+  def stop(self):
+    self.killed = True
+
 # Class for managing TurboMind
 class TurboMind:
-    def __init__(self, instance, model_path: str = None, host: str = "127.0.0.1", port: int = 9000, tp: int = 1, instance_num: int = 8, gpu_id=0, warm_up=True, model_type: str = "qwen-14b"):
+    def __init__(self, instance, model_name: str = None, model_path: str = None, host: str = "127.0.0.1", port: int = 9000, tp: int = 1, instance_num: int = 8, gpu_id=0, warm_up=True, model_type: str = "qwen-14b"):
+        instance.models[model_name] = self
+        
+        self.model_name = model_name
+        self.model_type = "turbomind"
+        self.process = None
         self.instance = instance
         self.model_path = model_path
         self.host = host
@@ -67,11 +104,14 @@ class TurboMind:
         self.base_directory = instance.base_directory
         # Load TurboMind Model
         self.run_build_process()
-        self.start_process()
+        self.run_subprocess()
         self.wait_for_tb_model_status()
         if warm_up:
             self.warm_up(gpu_id=self.gpu_id)
 
+    def is_running(self):
+        stat = os.system("ps -p %s &> /dev/null" % self.process.pid)
+        return stat == 0
     # Function to get the GPU memory usage
     def get_gpu_memory(self, gpu_id):
         try:
@@ -124,12 +164,6 @@ class TurboMind:
         except Exception as e:
             logging.error(f"An error occurred during warming up: {str(e)}")
 
-    # Function to start the TurboMind subprocess
-    def start_process(self):
-        # Create a thread to run the subprocess
-        self.process_thread = threading.Thread(target=self.run_subprocess)
-        self.process_thread.start()
-
     # Function to run the model build process
     def run_build_process(self):
         if not check_tp_config(f"{self.base_directory}/models/CortexLM-qwen-72b-chat-w4/workspace/triton_models/weights/config.ini", count_gpu(self.gpu_id)):
@@ -158,7 +192,7 @@ class TurboMind:
 
         try:
             # Execute the command using subprocess.run
-            subprocess.run(command, shell=True, check=False, env=environment)
+            self.process = subprocess.Popen(command, shell=True, env=environment, preexec_fn=os.setsid, stdout=subprocess.PIPE)
         except subprocess.CalledProcessError as e:
             logging.error(f"Error when executing the command: {e}")
         except Exception as e:
@@ -249,3 +283,18 @@ class TurboMind:
 
         streaming_duration = round(time.time() - stream_start_time, 2)
         logging.debug(f"[<--] (Completion) [{self.model_path}] Completion done in {streaming_duration}s")
+
+    def __del__(self):
+        if self.process:
+            try:
+                logging.info(f"Stop {self.model_path} model..")
+                model = self.instance.models.get(self.model_name)
+                if model:
+                    del model
+                os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
+                time.sleep(2)
+                logging.info(f"{self.model_path} model stopped.")
+            except Exception as e:
+                logging.error(f"Error when stopping {self.model_path} model: {e}")
+        else:
+            logging.info(f"{self.model_path} model is not running.")
