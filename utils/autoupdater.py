@@ -30,7 +30,8 @@ class AutoUpdater:
             subprocess.run(["git", "pull", "--force"], check=True)
             subprocess.run(["pip3", "install", "-r", "requirements.txt"], check=True)
             subprocess.run(["pip3", "install", "-e", "."], check=True)
-
+            logger.info(f"old version {self.local_version} | Repo version {remote_version} | Now {remote_version} -> Updated.")
+            self.local_version = remote_version
             return True
         else:
             logger.info(f"Current version {self.local_version} | Repo version {remote_version} -> No update needed.")
