@@ -74,7 +74,7 @@ Turbomind ```1,2,3,4```
 
 **Run:**
 
-```pm2 start "python3 run.py --host 0.0.0.0 --port 8080" --name sense```
+```pm2 start run.py --name sense -- --host 127.0.0.1 --port 8080 --pulse False```
 
 ## 📋 Requirements
 
