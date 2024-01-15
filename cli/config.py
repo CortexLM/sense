@@ -16,6 +16,7 @@ class SubCliConfig:
                 self._sense_dir = json.load(file)['path']
         except Exception as e:
             pass
+        self._mode = 0
         self._config_data = {}
         self._api_tokens = []
         self._models = {
@@ -47,7 +48,8 @@ class SubCliConfig:
                 pass;
             else:
                 return;
-
+        
+        self._set_mode()
         self._generate_api_key_if_required()
         self._set_gpu_ids()
         self._generate_config()
@@ -62,8 +64,12 @@ class SubCliConfig:
             for model in self._models[category]:
                 if "gpu_id" in model:
                     if category == "diffusions":
-                        gpu_id = input(f"Enter the GPU IDs for the diffusion model {model['modelName']} (e.g., 4,5,6,7): ")
-                        model["gpu_id"] = gpu_id
+                        gpu_ids = input(f"Enter the GPU IDs for the diffusion model {model['modelName']} (e.g., 0,1 or 2,3,4,5): ").split(',')
+                            if len(gpu_ids) in [1, 2, 4, 8, 16]:
+                                model["gpu_id"] = ','.join(gpu_ids)
+                                valid = True
+                            else:
+                                print("Invalid input. The number of GPUs must be 1, 2, 4, 8, 16, etc.")
                     elif category == "turbomind":
                         valid = False
                         while not valid:
@@ -78,14 +84,17 @@ class SubCliConfig:
         if os.path.exists(config_path):
             with open(config_path, 'r') as json_file:
                 self._config_data = json.load(json_file)
+            self._mode = self._config_data.get('mode', 0)
             self._api_tokens = self._config_data.get('api_tokens', [])
             self._models = self._config_data.get('models', [])
         else:
+            self._mode = 0
             self._config_data = {}
             self._api_tokens = []
 
     def _edit_config(self):
         # Assurez-vous que la liste des jetons d'API contient la nouvelle clé générée
+        self._config_data['mode'] = self._mode
         self._config_data['api_tokens'] = self._api_tokens
 
         # Enregistrez les modifications dans config.json
@@ -93,6 +102,14 @@ class SubCliConfig:
             json.dump(self._config_data, json_file, indent=4)
         print(colored("API key has been updated in the configuration.", "green"))
 
+    def _set_mode(self):
+        response = input(colored("Select mode. (1=Diffusion/2=Turbomind): ", "blue"))
+        if response.lower() == '1':
+            self._mode = 1
+        else:
+            self._mode = 2
+        print(colored(f"Mode: {self._mode}", "green"))
+    
     def _generate_api_key_if_required(self):
         response = input(colored("Do you want to generate a random API key? (y/n): ", "blue"))
         if response.lower() == 'y':
@@ -105,6 +122,7 @@ class SubCliConfig:
 
         # Save to config.json
         config_json = {
+            "mode": self._mode,
             "api_tokens": self._api_tokens,
             "models": self._models
         }
