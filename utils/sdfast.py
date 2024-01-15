@@ -13,7 +13,13 @@ class SDFast:
     """
 
     def __init__(self, instance, model_name: str = None, model_path: str = None, model_refiner: str = None, model_type: str = "t2i", host: str = "127.0.0.1", port: int = 9000, gpu_id=0, warm_up=True):
-        instance.models[model_name] = self
+        if instance.models.get(model_name) is None:
+            instance.models[model_name] = {}
+            instance.models[model_name]['workers'] = {}
+        n = 0
+        while n in instance.models[model_name]['workers']:
+                n += 1
+        instance.models[model_name]['workers'][n] = self
         """
         Initialize the SDFast model instance.
 

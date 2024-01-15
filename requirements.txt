@@ -9,3 +9,4 @@ diffusers
 xformers
 accelerate
 fire
+aiohttp

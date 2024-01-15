@@ -90,6 +90,31 @@ class DaemonAPI:
                 )
             return token
         
+
+        async def get_worker(model_name: str):
+            model = self.models.get(model_name)
+            print(model)
+            if not model:
+                raise HTTPException(status_code=404, detail="Model not found or stopped")
+
+            queue = model['workers'].get('queue', 0)
+            print(queue)
+            worker_count = len(model['workers'])
+
+            # Calculer l'indice du worker à utiliser
+            if len(worker_count) != 1:
+                n = queue + 1
+
+            # Si n est supérieur au nombre de travailleurs, revenir au premier worker
+            if n >= worker_count:
+                n = 0
+                queue = 0  # Mettre à jour la queue
+
+            # Mettre à jour la queue dans le modèle
+            model['workers']['queue'] = n
+
+            # Retourner le numéro du worker à utiliser
+            return model['workers'][n]
         @self.app.get("/system_info", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
         async def get_active_models(token: str = Depends(get_token)):
             models_list = jsonable_encoder(get_all_system_info())
@@ -126,10 +151,9 @@ class DaemonAPI:
 
         @self.app.post("/diffusion/{model_name}/text_to_image", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
         async def diffusion_text_to_image(model_name: str, interact: TextToImage, token: str = Depends(get_token)):
-            model = self.models.get(model_name)
+            model = await get_worker(model_name)
             if not model:
                 raise HTTPException(status_code=404, detail="Model not found or stopped")
-
             response = model.t2i(
                 prompt=interact.prompt,
                 height=interact.height,
@@ -143,10 +167,9 @@ class DaemonAPI:
         
         @self.app.post("/diffusion/{model_name}/image_to_image", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
         async def diffusion_image_to_image(model_name: str, interact: ImageToImage, token: str = Depends(get_token)):
-            model = self.models.get(model_name)
+            model = await get_worker(model_name)
             if not model:
                 raise HTTPException(status_code=404, detail="Model not found or stopped")
-
             response = model.i2i(
                 image=interact.image,
                 prompt=interact.prompt,
@@ -163,7 +186,8 @@ class DaemonAPI:
             model = self.models.get(model_name)
             if not model:
                 raise HTTPException(status_code=404, detail="Model not found or stopped")
-
+            if model.status != 1:
+                raise HTTPException(status_code=404, detail="The model is starting up, not yet loaded")
             response = model.interactive(
                 prompt=interact.prompt,
                 temperature=interact.temperature,
@@ -179,7 +203,8 @@ class DaemonAPI:
             model = self.models.get(model_name)
             if not model:
                 raise HTTPException(status_code=404, detail="Model not found or stopped")
-
+            if model.status != 1:
+                raise HTTPException(status_code=404, detail="The model is starting up, not yet loaded")
             response = model.completion(
                 messages=interact.messages,
                 temperature=interact.temperature,

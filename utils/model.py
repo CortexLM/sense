@@ -6,6 +6,7 @@ import aiofiles
 from huggingface_hub import snapshot_download
 from utils.turbomind import TurboMind
 from utils.sdfast import SDFast
+import random
 
 class ModelManager:
     """
@@ -16,11 +17,29 @@ class ModelManager:
         self.models = {}
         self.base_directory = os.getcwd()
         self.models_directory = os.path.join(self.base_directory, 'models')
+        self.available_ports = [6000,6001,6002,6003,6004,6005,6006]
+        self.used_ports = set()
         if not os.path.exists(self.models_directory):
             os.makedirs(self.models_directory)
         self.config = asyncio.run(self.load_config("config.json"))
         if not pulse:
-             asyncio.run(self.load_models_from_config())
+            asyncio.run(self.load_models_from_config())
+
+    def get_random_port(self):
+        if not self.available_ports:
+            raise Exception("All ports are in use.")
+        
+        port = random.choice(self.available_ports)
+        self.available_ports.remove(port)
+        self.used_ports.add(port)
+        return port
+
+    def release_port(self, port):
+        if port in self.used_ports:
+            self.used_ports.remove(port)
+            self.available_ports.append(port)
+        else:
+            raise Exception(f"Port {port} is not in the list of used ports.")
 
     async def load_config(self, config_path):
         """
@@ -48,18 +67,26 @@ class ModelManager:
         """
         model_name = model_name.replace('|', '/')
         model_folder = f"./models/{model_name.replace('/', '-')}/model"
-        logging.debug(f'Fetching model {model_name}..')
+        logging.debug(f'Fetching model {model_name} from huggingface..')
         snapshot_download(repo_id=model_name, local_dir=model_folder)
 
+    async def allocate_wrapper(self, engine, model_name, n_gpus, tb_model_type=None):
+        async for chunk in self.allocate(engine=engine, model_name=model_name, n_gpus=n_gpus, tb_model_type=tb_model_type):
+            logging.debug(chunk)
     async def load_models_from_config(self):
         """
         Asynchronously load models as specified in the configuration.
         """
         models = self.config.get('models', {})
-        await asyncio.gather(
-            self.load_diffusions(models.get('diffusions', [])),
-            self.load_turbomind(models.get('turbomind', []))
-        )
+        logging.success("Pulse Load Balancer is disabled. Loading models via config.json")
+        await self.load_diffusions(models.get('diffusions', [])),
+        await self.load_turbomind(models.get('turbomind', []))
+        gpu_ids = models["diffusions"][0]["gpu_id"].split(",")  # Split the GPU IDs string into a list
+        
+        self.allocate_wrapper(engine="turbomind", model_name="CortexLM|qwen-72b-chat-w4", n_gpus=models["turbomind"][0]["gpu_id"], tb_model_type="qwen-14b"),
+        for gpu_id in gpu_ids:
+            await self.allocate_wrapper(engine="sdfast", model_name="dataautogpt3|OpenDalleV1.1", n_gpus=gpu_id)
+
 
     async def load_diffusions(self, diffusions):
         """
@@ -92,7 +119,7 @@ class ModelManager:
             await self.fetch_model(model_name=model_name)
             yield {"status": "downloaded", "message": "Model downloaded"}
             yield {"status": "start_process", "message": "Starting process"}
-            tm = TurboMind(self, model_path=model_path, model_name=model_name, gpu_id="0", model_type=model_type)
+            tm = TurboMind(self, model_path=model_path, model_name=model_name, gpu_id="0", tb_model_type=model_type, port=self.get_random_port())
             yield {"status": "wait_status", "message": "Wait for status"}
             if await tm.wait_for_tb_model_status():
                 yield {"status": "ready", "message": "Model is ready"}
@@ -111,11 +138,10 @@ class ModelManager:
             await self.fetch_model(model_name=model_name)
             yield {"status": "downloaded", "message": "Model downloaded"}
             yield {"status": "start_process", "message": "Starting process"}
-            sd = SDFast(self, model_name=model_name, model_path=model_path, model_refiner="/models/stabilityai-stable-diffusion-xl-refiner-1.0/model", port=6001, model_type="t2i", gpu_id=n_gpus)
+            sd = SDFast(self, model_name=model_name, model_path=model_path, model_refiner="/models/stabilityai-stable-diffusion-xl-refiner-1.0/model", port=self.get_random_port(), model_type="t2i", gpu_id=n_gpus)
             yield {"status": "wait_status", "message": "Wait for status"}
             if await sd.wait_for_sd_model_status():
                 yield {"status": "ready", "message": "Model is ready"}
-                self.models[model_name].status = 1
                 logging.info(f'Model {model_name} is ready')
             else:
                 yield {"status": "error", "message": "Model is not ready"}

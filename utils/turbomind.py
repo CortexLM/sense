@@ -87,7 +87,7 @@ class TurboMindThread(threading.Thread):
 
 # Class for managing TurboMind
 class TurboMind:
-    def __init__(self, instance, model_name: str = None, model_path: str = None, host: str = "127.0.0.1", port: int = 9000, tp: int = 1, instance_num: int = 8, gpu_id=0, warm_up=True, model_type: str = "qwen-14b"):
+    def __init__(self, instance, model_name: str = None, model_path: str = None, host: str = "127.0.0.1", port: int = 9000, tp: int = 1, instance_num: int = 8, gpu_id=0, warm_up=True, tb_model_type: str = "qwen-14b"):
         instance.models[model_name] = self
 
         self.status = 0 # 0 = Not Ready | 1 = Ready
@@ -99,9 +99,8 @@ class TurboMind:
         self.host = host
         self.port = port
         self.tp = tp
-        self.model_type = model_type
         self.instance_num = instance_num
-        self.tb_model = None
+        self.tb_model_type = tb_model_type
         self.gpu_id = gpu_id
         self.base_directory = instance.base_directory
         # Load TurboMind Model
@@ -169,7 +168,7 @@ class TurboMind:
             environment = os.environ.copy()
             environment["CUDA_VISIBLE_DEVICES"] = self.gpu_id
             
-            command = f"lmdeploy convert --model-name {self.model_type} --model-path {self.base_directory}{self.model_path}model --dst_path {self.base_directory}{self.model_path}/workspace --model-format awq --group-size 128 --tp {count_gpu(self.gpu_id)}"
+            command = f"lmdeploy convert --model-name {self.model_type} --model-path {self.base_directory}{self.model_path}/model --dst_path {self.base_directory}{self.model_path}/workspace --model-format awq --group-size 128 --tp {count_gpu(self.gpu_id)}"
             logging.info(f'Spawning build model for {self.model_path}')
 
             try:
@@ -198,7 +197,7 @@ class TurboMind:
             logging.error(f"An error occurred: {e}")
 
     # Function to wait for the TurboMind model to be ready
-    async def wait_for_tb_model_status(self, timeout=120):
+    async def wait_for_tb_model_status(self, timeout=360):
         start_time = asyncio.get_event_loop().time()
         url = f"http://{self.host}:{self.port}/v1/models"
         async with aiohttp.ClientSession() as session:
@@ -250,6 +249,7 @@ class TurboMind:
     # Function for message completions
     def completion(self, messages=None, temperature=0.7, repetition_penalty=1.2, top_p=0.7, max_tokens=512):
         logging.debug(f"[-->] [{self.model_path}] Request for completion")
+        print(self.tb_model)
         payload = {
             "model": self.tb_model,
             "messages": messages,
