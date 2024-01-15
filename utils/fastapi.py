@@ -102,13 +102,11 @@ class DaemonAPI:
                 raise HTTPException(status_code=500, detail="No workers available for the model")
 
             queue = model['workers'].get('queue', 0)
-            
+            model['workers']['queue'] = queue            
             if queue + 1 == worker_count:
                 queue = 0
             else:
                 queue += 1
-            
-            model['workers']['queue'] = queue
             
             return model['workers'][queue]
         @self.app.get("/system_info", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
