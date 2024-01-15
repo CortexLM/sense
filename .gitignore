@@ -4,4 +4,4 @@
 /build/*
 config.json
 sense.egg-info/
-log/*
+logs/*
