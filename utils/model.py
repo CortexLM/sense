@@ -79,8 +79,10 @@ class ModelManager:
         """
         models = self.config.get('models', {})
         logging.success("Pulse Load Balancer is disabled. Loading models via config.json")
-        await self.load_diffusions(models.get('diffusions', [])),
-        await self.load_turbomind(models.get('turbomind', []))
+        if self.config.get('mode', 1)==1:
+            await self.load_diffusions(models.get('diffusions', []))
+        else:
+            await self.load_turbomind(models.get('turbomind', []))
         gpu_ids = models["diffusions"][0]["gpu_id"].split(",")  # Split the GPU IDs string into a list
         
         self.allocate_wrapper(engine="turbomind", model_name="CortexLM|qwen-72b-chat-w4", n_gpus=models["turbomind"][0]["gpu_id"], tb_model_type="qwen-14b"),
