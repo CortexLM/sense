@@ -249,7 +249,6 @@ class TurboMind:
     # Function for message completions
     def completion(self, messages=None, temperature=0.7, repetition_penalty=1.2, top_p=0.7, max_tokens=512):
         logging.debug(f"[-->] [{self.model_path}] Request for completion")
-        print(self.tb_model)
         payload = {
             "model": self.tb_model,
             "messages": messages,

@@ -93,12 +93,10 @@ class DaemonAPI:
 
         async def get_worker(model_name: str):
             model = self.models.get(model_name)
-            print(model)
             if not model:
                 raise HTTPException(status_code=404, detail="Model not found or stopped")
 
             queue = model['workers'].get('queue', 0)
-            print(queue)
             worker_count = len(model['workers'])
 
             # Calculer l'indice du worker à utiliser
