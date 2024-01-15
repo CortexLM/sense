@@ -100,7 +100,7 @@ class DaemonAPI:
             worker_count = len(model['workers'])
 
             # Calculer l'indice du worker à utiliser
-            if len(worker_count) != 1:
+            if worker_count != 1:
                 n = queue + 1
 
             # Si n est supérieur au nombre de travailleurs, revenir au premier worker
