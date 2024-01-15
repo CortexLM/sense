@@ -14,7 +14,7 @@ import GPUtil
 import concurrent.futures
 import sys
 import aiohttp
-
+import shlex
 # Function to check if a string is valid JSON
 def is_valid_json(json_str):
     try:
@@ -190,7 +190,7 @@ class TurboMind:
 
         try:
             # Execute the command using subprocess.run
-            self.process = subprocess.Popen(command, shell=True, env=environment, preexec_fn=os.setsid, stdout=subprocess.PIPE)
+            self.process = subprocess.Popen(shlex.split(command), shell=False, env=environment, preexec_fn=os.setsid, stdout=subprocess.PIPE)
         except subprocess.CalledProcessError as e:
             logging.error(f"Error when executing the command: {e}")
         except Exception as e:

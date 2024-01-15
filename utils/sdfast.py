@@ -7,6 +7,7 @@ import subprocess
 from utils.logging import logging
 import signal
 import asyncio
+import shlex
 class SDFast:
     """
     A class to manage the interface with the SDFast model for generating images from text or images.
@@ -54,7 +55,7 @@ class SDFast:
         logging.info(f'Spawning 1 process for {self.model_path}')
 
         try:
-            self.process = subprocess.Popen(command, shell=True, env=environment, preexec_fn=os.setsid, stdout=subprocess.PIPE)
+            self.process = subprocess.Popen(shlex.split(command), shell=False, env=environment, preexec_fn=os.setsid, stdout=subprocess.PIPE)
         except subprocess.CalledProcessError as e:
             logging.error(f"Error when executing the command: {e}")
         except Exception as e:
