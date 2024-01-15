@@ -6,7 +6,7 @@ import json
 import subprocess
 from utils.logging import logging
 import signal
-
+import asyncio
 class SDFast:
     """
     A class to manage the interface with the SDFast model for generating images from text or images.
@@ -38,9 +38,6 @@ class SDFast:
         self.model_refiner = model_refiner
         self.base_directory = instance.base_directory
         self.run_subprocess()
-        if warm_up:
-            self.wait_for_sd_model_status()
-
     def run_subprocess(self):
         """
         Run the SDFast model subprocess.
@@ -57,7 +54,7 @@ class SDFast:
         except Exception as e:
             logging.error(f"An error occurred: {e}")
 
-    def wait_for_sd_model_status(self, timeout=720):
+    async def wait_for_sd_model_status(self, timeout=720):
         """
         Wait for the SDFast model to be ready.
 
@@ -77,7 +74,7 @@ class SDFast:
                     return True
             except requests.exceptions.RequestException:
                 pass
-            time.sleep(1)  # Wait for a second before retrying
+            await asyncio.sleep(1)  # Wait for a second before retrying
 
     def i2i(self, image, prompt, height, width, strength, seed, batch_size):
         """
@@ -140,7 +137,7 @@ class SDFast:
             logging.error(f"Failed to get response: {response.status_code}")
             return None
         
-    def __del__(self):
+    def destroy(self):
         if self.process:
             try:
                 logging.info(f"Stop {self.model_path} model..")

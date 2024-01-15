@@ -3,14 +3,24 @@ from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from utils.logging import logging
 import typing as t
-import json
 from starlette import status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.responses import StreamingResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
-import signal
-import utils.system as system
+from enum import Enum
+import json
+
+class Engine(str, Enum):
+    TURBOMIND = 'turbomind'
+    sdfast = 'sdfast'
+
+class Model(BaseModel):
+    engine: Engine
+    n_gpus: str = "0" # GPU ids 0,1,2,3
+
+
+
 class TextInteractive(BaseModel):
     prompt: str
     temperature: Optional[float] = 0.8
@@ -81,12 +91,20 @@ class DaemonAPI:
                 raise HTTPException(status_code=404, detail="Model not found or stopped")
             
             try:
-                model.__del__()
+                await model.destroy()
                 return {"status": "success", "message": "Model stopped"}
             except:
                 return {"status": "error", "message": "Model not stopped"}
 
+        @self.app.post("/model/{model_name}/start", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
+        async def start_model(model_name: str, interact: Model, token: str = Depends(get_token)):            
+            response_stream = model.allocate(engine=interact.engine, model_name=model_name, n_gpus=interact.n_gpus)
 
+            async def json_stream_generator(stream):
+                async for item in stream:
+                    yield json.dumps(item) + "\n"
+
+            return StreamingResponse(json_stream_generator(response_stream), media_type="application/json")
 
         @self.app.post("/diffusion/{model_name}/text_to_image", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
         async def diffusion_text_to_image(model_name: str, interact: TextToImage, token: str = Depends(get_token)):
