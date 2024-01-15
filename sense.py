@@ -3,10 +3,12 @@ import utils.system as system
 import signal
 def main():
     from utils.logging import logging
-    print("""
+    with open("VERSION", "r") as f:
+        local_version = f.read().strip()
+    print(f"""
 ░▄▀▀▒██▀░█▄░█░▄▀▀▒██▀░░░▄▀▀▒██▀▒█▀▄░█▒█▒██▀▒█▀▄
 ▒▄██░█▄▄░█▒▀█▒▄██░█▄▄▒░▒▄██░█▄▄░█▀▄░▀▄▀░█▄▄░█▀▄
-                                                v0.0.1
+                                                v{local_version}
 """)
     logging.debug("Loading modules..")
     import argparse
