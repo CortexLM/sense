@@ -74,7 +74,7 @@ Turbomind ```0,1,2,3```
 
 **Run:**
 
-```pm2 start run.py --name sense -- --process_name sense_daemon --host 127.0.0.1 --port 8080 --pulse False```
+```pm2 start run.py --name sense -- --process_name sense_daemon --host 0.0.0.0 --port 8080 --pulse False```
 
 ## 📋 Requirements
 
