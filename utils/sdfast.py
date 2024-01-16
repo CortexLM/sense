@@ -8,6 +8,7 @@ from utils.logging import logging
 import signal
 import asyncio
 import shlex
+import aiohttp
 class SDFast:
     """
     A class to manage the interface with the SDFast model for generating images from text or images.
@@ -83,20 +84,23 @@ class SDFast:
                 pass
             await asyncio.sleep(1)  # Wait for a second before retrying
 
-    def i2i(self, image, prompt, height, width, strength, seed, batch_size):
-        """
-        Image-to-image transformation.
+    async def make_request(self, endpoint, payload):
+        async with aiohttp.ClientSession() as session:
+            url = f"http://{self.host}:{self.port}{endpoint}"
+            headers = {"Content-Type": "application/json"}
+            try:
+                async with session.post(url, json=payload, headers=headers) as response:
+                    response_data = await response.json()
+                    if response.status == 200:
+                        return response_data
+                    else:
+                        logging.error(f"Failed to get response: {response.status}")
+                        return None
+            except Exception as e:
+                logging.error(f"Failed to make request: {str(e)}")
+                return None
 
-        :param image: Base image for transformation.
-        :param prompt: Text prompt for image generation.
-        :param height: Height of the output image.
-        :param width: Width of the output image.
-        :param num_inference_steps: Number of inference steps.
-        :param seed: Random seed for generation.
-        :param batch_size: Batch size for generation.
-        :param refiner: Whether to use the refiner model.
-        :return: The generated image or None if failed.
-        """
+    async def i2i(self, image, prompt, height, width, strength, seed, batch_size):
         payload = {
             "image": image,
             "prompt": prompt,
@@ -106,27 +110,10 @@ class SDFast:
             "seed": seed,
             "batch_size": batch_size
         }
-        data = json.dumps(payload)
-        response = requests.post(f"http://{self.host}:{self.port}/image_to_image", data=data)
-        if response.status_code == 200:
-            return response.json()
-        else:
-            logging.error(f"Failed to get response: {response.status_code}")
-            return None
+        response = await self.make_request("/image_to_image", payload)
+        return response
 
-    def t2i(self, prompt, height, width, num_inference_steps, seed, batch_size, refiner):
-        """
-        Text-to-image transformation.
-
-        :param prompt: Text prompt for image generation.
-        :param height: Height of the output image.
-        :param width: Width of the output image.
-        :param num_inference_steps: Number of inference steps.
-        :param seed: Random seed for generation.
-        :param batch_size: Batch size for generation.
-        :param refiner: Whether to use the refiner model.
-        :return: The generated image or None if failed.
-        """
+    async def t2i(self, prompt, height, width, num_inference_steps, seed, batch_size, refiner):
         payload = {
             "prompt": prompt,
             "height": height,
@@ -136,13 +123,8 @@ class SDFast:
             "batch_size": batch_size,
             "refiner": refiner
         }
-        data = json.dumps(payload)
-        response = requests.post(f"http://{self.host}:{self.port}/text_to_image", data=data)
-        if response.status_code == 200:
-            return response.json()
-        else:
-            logging.error(f"Failed to get response: {response.status_code}")
-            return None
+        response = await self.make_request("/text_to_image", payload)
+        return response
         
     def destroy(self):
         if self.process:
