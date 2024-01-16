@@ -102,11 +102,11 @@ class DaemonAPI:
                 raise HTTPException(status_code=500, detail="No workers available for the model")
 
             queue = model['workers'].get('queue', 0)         
-            if queue + 1 == worker_count:
-                queue = 0
+            if queue + 2 >= worker_count:
+                model['workers']['queue'] = 0
             else:
                 model['workers']['queue'] = queue + 1
-            logging.debug(f"Use worker {queue}.")            
+            
             return model['workers'][queue]
         @self.app.get("/system_info", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
         async def get_active_models(token: str = Depends(get_token)):
@@ -147,7 +147,7 @@ class DaemonAPI:
             model = await get_worker(model_name)
             if not model:
                 raise HTTPException(status_code=404, detail="Model not found or stopped")
-            response = await model.t2i(
+            response = model.t2i(
                 prompt=interact.prompt,
                 height=interact.height,
                 width=interact.width,
@@ -163,7 +163,7 @@ class DaemonAPI:
             model = await get_worker(model_name)
             if not model:
                 raise HTTPException(status_code=404, detail="Model not found or stopped")
-            response = await model.i2i(
+            response = model.i2i(
                 image=interact.image,
                 prompt=interact.prompt,
                 height=interact.height,
