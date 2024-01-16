@@ -105,7 +105,7 @@ class TurboMind:
         self.gpu_id = gpu_id
         self.base_directory = instance.base_directory
         # Load TurboMind Model
-        self.run_build_process()
+        #self.run_build_process()
         self.run_subprocess()
 
     def is_running(self):
@@ -186,7 +186,7 @@ class TurboMind:
         environment = os.environ.copy()
         environment["CUDA_VISIBLE_DEVICES"] = self.gpu_id
         
-        command = f"lmdeploy serve api_server {self.base_directory}{self.model_path}/workspace --model-name sense --server_name {self.host} --server_port {self.port} --tp {count_gpu(self.gpu_id)}"
+        command = f"lmdeploy serve api_server {self.base_directory}{self.model_path}/model --model-name qwen-14b  --server_name {self.host} --server_port {self.port} --tp {count_gpu(self.gpu_id)} --backend turbomind --model-format awq"
         logging.info(f'Spawning 1 process for {self.model_path}')
 
         try:
