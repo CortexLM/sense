@@ -50,6 +50,7 @@ class TextCompletion(BaseModel):
     repetition_penalty: Optional[float] = 1.1
     top_p: Optional[float] = 0.9
     max_tokens: Optional[int] = 512
+    top_k: Optional[int] = 40
 
 class TextToImage(BaseModel):
     prompt: str
@@ -204,6 +205,7 @@ class DaemonAPI:
                 temperature=interact.temperature,
                 repetition_penalty=interact.repetition_penalty,
                 top_p=interact.top_p,
+                top_k=interact.top_k,
                 max_tokens=interact.max_tokens,
             )
             return StreamingResponse(response)

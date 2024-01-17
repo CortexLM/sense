@@ -248,7 +248,7 @@ class TurboMind:
         logging.debug(f"[<--] (Interactive) [{self.model_path}] Completion done in {streaming_duration}s ({tokens} tokens)")
 
     # Function for message completions
-    def completion(self, messages=None, temperature=0.7, repetition_penalty=1.2, top_p=0.7, max_tokens=512):
+    def completion(self, messages=None, temperature=0.7, repetition_penalty=1.2, top_p=0.7, max_tokens=512, top_k=40):
         logging.debug(f"[-->] [{self.model_path}] Request for completion")
         payload = {
             "model": self.tb_model,
@@ -256,6 +256,7 @@ class TurboMind:
             "temperature": temperature,
             "repetition_penalty": repetition_penalty,
             "top_p": top_p,
+            "top_k": top_k,
             "stream": True,
             "max_tokens": max_tokens
         }
