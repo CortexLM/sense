@@ -27,7 +27,7 @@ This repository includes a daemon service designed to automate the inference pro
 
 **Download the script:**
 
-```wget -q https://raw.githubusercontent.com/CortexLM/sense/0.1.0/install.sh```
+```wget -q https://raw.githubusercontent.com/CortexLM/sense/0.1.4/install.sh```
 
 **Make the script executable:**
 
