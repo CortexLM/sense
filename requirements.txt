@@ -1,7 +1,7 @@
 torch
 loguru
 huggingface_hub
-lmdeploy[serve]
+lmdeploy==0.1.0
 psutil
 gputil
 stable-fast
@@ -10,3 +10,8 @@ xformers
 accelerate
 fire
 aiohttp
+python-Levenshtein
+aiofiles
+fastapi
+uvicorn
+shortuuid

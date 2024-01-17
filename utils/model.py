@@ -82,10 +82,13 @@ class ModelManager:
         await self.load_diffusions(models.get('diffusions', [])),
         await self.load_turbomind(models.get('turbomind', []))
         gpu_ids = models["diffusions"][0]["gpu_id"].split(",")  # Split the GPU IDs string into a list
-        
-        await self.allocate_wrapper(engine="turbomind", model_name="CortexLM|qwen-72b-chat-w4", n_gpus=models["turbomind"][0]["gpu_id"], tb_model_type="qwen-14b"),
-        for gpu_id in gpu_ids:
-            await self.allocate_wrapper(engine="sdfast", model_name="dataautogpt3|OpenDalleV1.1", n_gpus=gpu_id)
+        logging.debug('Async loading models. Please wait')
+        task1 = self.allocate_wrapper(engine="turbomind", model_name="CortexLM|qwen-72b-chat-w4", n_gpus=models["turbomind"][0]["gpu_id"], tb_model_type="qwen-14b")
+        tasks2 = [self.allocate_wrapper(engine="sdfast", model_name="dataautogpt3|OpenDalleV1.1", n_gpus=gpu_id) for gpu_id in gpu_ids]
+
+        # Executing all tasks simultaneously
+        await asyncio.gather(task1, *tasks2)
+
 
 
     async def load_diffusions(self, diffusions):
@@ -122,6 +125,7 @@ class ModelManager:
             tm = TurboMind(self, model_path=model_path, model_name=model_name, gpu_id=n_gpus, tb_model_type=model_type, port=self.get_random_port())
             yield {"status": "wait_status", "message": "Wait for status"}
             if await tm.wait_for_tb_model_status():
+                await tm.warm_up(gpu_id=n_gpus)
                 yield {"status": "ready", "message": "Model is ready"}
                 self.models[model_name].status = 1
                 logging.info(f'Model {model_name} is ready')
