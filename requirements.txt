@@ -11,3 +11,7 @@ accelerate
 fire
 aiohttp
 python-Levenshtein
+aiofiles
+fastapi
+uvicorn
+shortuuid
