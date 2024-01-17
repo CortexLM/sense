@@ -122,6 +122,7 @@ class ModelManager:
             tm = TurboMind(self, model_path=model_path, model_name=model_name, gpu_id=n_gpus, tb_model_type=model_type, port=self.get_random_port())
             yield {"status": "wait_status", "message": "Wait for status"}
             if await tm.wait_for_tb_model_status():
+                await tm.warm_up(gpu_id=n_gpus)
                 yield {"status": "ready", "message": "Model is ready"}
                 self.models[model_name].status = 1
                 logging.info(f'Model {model_name} is ready')

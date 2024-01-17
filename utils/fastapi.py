@@ -183,7 +183,7 @@ class DaemonAPI:
                 raise HTTPException(status_code=404, detail="Model not found or stopped")
             if model.status != 1:
                 raise HTTPException(status_code=404, detail="The model is starting up, not yet loaded")
-            response = model.interactive(
+            response = model.interactive_async(
                 prompt=interact.prompt,
                 temperature=interact.temperature,
                 repetition_penalty=interact.repetition_penalty,
@@ -200,7 +200,7 @@ class DaemonAPI:
                 raise HTTPException(status_code=404, detail="Model not found or stopped")
             if model.status != 1:
                 raise HTTPException(status_code=404, detail="The model is starting up, not yet loaded")
-            response = model.completion(
+            response = model.completion_async(
                 messages=interact.messages,
                 temperature=interact.temperature,
                 repetition_penalty=interact.repetition_penalty,
