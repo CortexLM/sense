@@ -14,6 +14,7 @@ import base64
 from PIL import Image
 from pydantic import BaseModel
 from io import BytesIO
+import threading
 
 # Function to convert base64 to a PIL Image object
 def base64_to_image(base64_encoded_image):
@@ -30,6 +31,14 @@ def image_to_base64(image):
 def is_running_under_uvicorn():
     return any('uvicorn' in frame.filename for frame in inspect.stack())
 
+def block_thread(func):
+    func._lock = threading.Lock()
+
+    def wrapper(*args, **kwargs):
+        with func._lock:
+            return func(*args, **kwargs)
+
+    return wrapper
 # Singleton class for SDFastAPI
 class SDFastAPI:
     def __init__(self, model_name, pipeline, warm_up=True):
@@ -82,6 +91,7 @@ class SDFastAPI:
             strength=1
         )
 
+    @block_thread
     def inference(self, **kwargs):
         if kwargs.get('seed', -1) == -1:
             kwargs['seed'] = random.randint(0, 2 ** 32 - 1)
