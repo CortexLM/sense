@@ -180,10 +180,9 @@ class DaemonAPI:
         async def text_generation_interactive(model_name: str, interact: TextInteractive, token: str = Depends(get_token)):
             model = self.models.get(model_name)
             if not model:
-                raise HTTPException(status_code=404, detail="Model not found or stopped")
-            if model.status != 1:
-                raise HTTPException(status_code=404, detail="The model is starting up, not yet loaded")
-            response = model.interactive_async(
+                raise HTTPException(status_code=404, detail="Model not found")
+
+            response = model.interactive(
                 prompt=interact.prompt,
                 temperature=interact.temperature,
                 repetition_penalty=interact.repetition_penalty,
@@ -197,15 +196,13 @@ class DaemonAPI:
         async def text_generation_completions(model_name: str, interact: TextCompletion, token: str = Depends(get_token)):
             model = self.models.get(model_name)
             if not model:
-                raise HTTPException(status_code=404, detail="Model not found or stopped")
-            if model.status != 1:
-                raise HTTPException(status_code=404, detail="The model is starting up, not yet loaded")
-            response = model.completion_async(
+                raise HTTPException(status_code=404, detail="Model not found")
+
+            response = model.completion(
                 messages=interact.messages,
                 temperature=interact.temperature,
                 repetition_penalty=interact.repetition_penalty,
                 top_p=interact.top_p,
-                top_k=interact.top_k,
                 max_tokens=interact.max_tokens,
             )
             return StreamingResponse(response)

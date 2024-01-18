@@ -9,7 +9,7 @@ def parse_requirements():
     return requirements
 setup(
     name='sense',
-    version='0.1.4',
+    version='0.2.0',
     description='Daemon for Model Inference and Auto-Scaling for ρ Subnet',
     long_description='This repository includes a daemon service designed to automate the inference process for Large Language Models (LLMs) / GenAI models and manage the auto-scaling of resources. The daemon intelligently adjusts computational resources in response to real-time demand and system performance, ensuring high efficiency and robust model performance.',
     author='Cortex Foundation',

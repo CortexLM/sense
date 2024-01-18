@@ -107,13 +107,12 @@ class TurboMind:
         self.gpu_id = gpu_id
         self.base_directory = instance.base_directory
         # Load TurboMind Model
-        # self.run_build_process()
-        self.run_subprocess()
+        self.run_build_process()
+        self.start_process()
 
     def is_running(self):
         stat = os.system("ps -p %s &> /dev/null" % self.process.pid)
         return stat == 0
-    # Function to get the GPU memory usage
     def get_gpu_memory(self, gpu_id):
         try:
             gpu_info = GPUtil.getGPUs()[gpu_id]
@@ -124,47 +123,60 @@ class TurboMind:
             return 0.0
 
     # Function to run an interactive test
-    async def run_interactive_test(self):
-        async for token in self.interactive_async(prompt="Once upon a time, in a picturesque little village ..."):
-            pass
-        return
+    def run_interactive_test(self):
+        tokens = self.interactive(prompt="Once upon a time, in a picturesque little village ...")
+        return concurrent.futures.ThreadPoolExecutor().submit(self.process_tokens, tokens)
+    
     # Function to process tokens from an interactive test
-    async def process_tokens(self, tokens):
+    def process_tokens(self, tokens):
         final_response = ""
         for token in tokens:
             final_response += json.loads(token)['text']
         return final_response
 
     # Function to warm up the TurboMind model
-    async def warm_up(self, gpu_id):
+    def warm_up(self, gpu_id):
         logging.info(f"🌺 Warming up {self.model_path}.. Please wait.")
         logging.warning(f"🌺 This may take some time. We check how many concurrent requests your GPUs can handle.")
-
+        
+        vram_limit = 0.95  # 95% of VRAM limit
+        
         try:
-            await self.run_interactive_test()
+            # Measure VRAM usage with a single request
+            single_request_future = self.run_interactive_test()
+            single_request_future.result()  # Wait for the single request to complete
             single_request_memory = self.get_gpu_memory(get_first_gpu(gpu_id))
             logging.info(f"Single request GPU memory usage: {single_request_memory:.2f} MB")
 
-            await asyncio.gather(
-                self.run_interactive_test(),
-                self.run_interactive_test()
-            )
+            # Measure VRAM usage with two simultaneous requests
+            futures = [self.run_interactive_test(), self.run_interactive_test()]
+
+            for future in concurrent.futures.as_completed(futures):
+                response = future.result()
+            
             total_memory = self.get_gpu_memory(get_first_gpu(gpu_id))
             logging.info(f"Total GPU memory used with two concurrent requests: {total_memory:.2f} MB")
 
-            ram_per_request = (total_memory - single_request_memory) / 2
+            # Calculate RAM usage per request
+            ram_per_request = (total_memory - single_request_memory)  # Divide by 2 for two requests
             logging.info(f"RAM usage per request with two concurrent requests: {ram_per_request:.2f} MB")
 
         except Exception as e:
             logging.error(f"An error occurred during warming up: {str(e)}")
 
+    # Function to start the TurboMind subprocess
+    def start_process(self):
+        # Create a thread to run the subprocess
+        self.process_thread = threading.Thread(target=self.run_subprocess)
+        self.process_thread.start()
+
     # Function to run the model build process
     def run_build_process(self):
-        if not check_tp_config(f"{self.base_directory}{self.model_path}/workspace/triton_models/weights/config.ini", count_gpu(self.gpu_id)):
+        if not check_tp_config(f"{self.base_directory}{self.model_path}workspace/triton_models/weights/config.ini", count_gpu(self.gpu_id)):
             environment = os.environ.copy()
             environment["CUDA_VISIBLE_DEVICES"] = self.gpu_id
             
-            command = f"lmdeploy convert --model-name {self.tb_model_type} --model-path {self.base_directory}{self.model_path}/model --dst_path {self.base_directory}{self.model_path}/workspace --model-format awq --group-size 128 --tp {count_gpu(self.gpu_id)}"
+            command = f"lmdeploy convert --model-name {self.tb_model_type} --model-path {self.base_directory}{self.model_path}model --dst_path {self.base_directory}{self.model_path}workspace --model-format awq --group-size 128 --tp {count_gpu(self.gpu_id)}"
             logging.info(f'Spawning build model for {self.model_path}')
 
             try:
@@ -181,40 +193,41 @@ class TurboMind:
         environment = os.environ.copy()
         environment["CUDA_VISIBLE_DEVICES"] = self.gpu_id
         
-        command = f"lmdeploy serve api_server {self.base_directory}{self.model_path}/model --model-name {self.tb_model_type}  --server-name {self.host} --server-port {self.port} --tp {count_gpu(self.gpu_id)} --model-format awq"
+        command = f"lmdeploy serve api_server {self.base_directory}{self.model_path}workspace --server-name {self.host} --server-port {self.port} --tp {count_gpu(self.gpu_id)}"
         logging.info(f'Spawning 1 process for {self.model_path}')
 
         try:
             # Execute the command using subprocess.run
-            self.process = subprocess.Popen(shlex.split(command), shell=False, env=environment, preexec_fn=os.setsid, stdout=subprocess.PIPE)
+            subprocess.run(command, shell=True, check=False, env=environment)
         except subprocess.CalledProcessError as e:
             logging.error(f"Error when executing the command: {e}")
         except Exception as e:
             logging.error(f"An error occurred: {e}")
 
     # Function to wait for the TurboMind model to be ready
-    async def wait_for_tb_model_status(self, timeout=360):
-        start_time = asyncio.get_event_loop().time()
+    def wait_for_tb_model_status(self, timeout=240):
+        start_time = time.time()
         url = f"http://{self.host}:{self.port}/v1/models"
-        async with aiohttp.ClientSession() as session:
-            while True:
-                current_time = asyncio.get_event_loop().time()
-                if current_time - start_time > timeout:
-                    logging.error(f"Timeout of {timeout} seconds exceeded for model {self.model_path} ({self.host}:{self.port})")
-                    return False
+        while True:
+            current_time = time.time()
+            if current_time - start_time > timeout:
+                logging.error(f"Error: Timeout of {timeout} seconds exceeded for model {self.model_path} ({self.host}:{self.port})")
+                return False
 
-                try:
-                    async with session.get(url) as response:
-                        if response.status == 200:
-                            data = await response.json()
-                            self.tb_model = data['data'][0]['id']
-                            return True
-                except aiohttp.ClientError:
-                    await asyncio.sleep(1)
+            try:
+                response = requests.get(url)
+                if response.status_code == 200:
+                    data = response.json()
+                    self.tb_model = data['data'][0]['id']
+                    logging.info(f'Model {self.model_path} is ready')
+                    return True
+            except requests.exceptions.RequestException:
+                time.sleep(1)
+                pass
+
     # Function for interactive completions
-    async def interactive_async(self, prompt=None, temperature=0.7, repetition_penalty=1.2, top_p=0.7, top_k=40, max_tokens=512):
+    def interactive(self, prompt=None, temperature=0.7, repetition_penalty=1.2, top_p=0.7, top_k=40, max_tokens=512):
         logging.debug(f"[-->] (Interactive) [{self.model_path}] Request for completion")
-        
         payload = {
             "prompt": prompt,
             "temperature": temperature,
@@ -224,56 +237,58 @@ class TurboMind:
             "stream": True,
             "request_output_len": max_tokens
         }
+        data = json.dumps(payload)
+        response = requests.post(f"http://{self.host}:{self.port}" + '/v1/chat/interactive', data=data, stream=True)
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(f"http://{self.host}:{self.port}/v1/chat/interactive", json=payload, headers=self.headers) as response:
-                stream_start_time = time.time()
-                tokens = 0
-                try:
-                    async for chunk in response.content.iter_any():
-                        chunk = chunk.decode('utf-8')
-                        if is_valid_json(chunk):
-                            chunk_data = json.loads(chunk)
-                            if 'text' in chunk_data:
-                                yield json.dumps({"text": chunk_data['text']}) + "\n"
-                                tokens = chunk_data['tokens']
-                except Exception as e:
-                    logging.error('Chunk:', str(e))
+        stream_start_time = time.time()
+        response_stream = response.iter_content(chunk_size=1024, decode_unicode=True)
+        tokens = 0;
+        for chunk in response_stream:
+            try:
+                if is_valid_json(chunk):
+                    chunk_data = json.loads(chunk)
+                    if 'text' in chunk_data:
+                        yield json.dumps({"text": chunk_data['text']})+"\n"
+                        tokens = chunk_data['tokens'];         
+            except Exception as e:
+                logging.error('Chunk :', str(e))
 
-                streaming_duration = round(time.time() - stream_start_time, 2)
-                logging.debug(f"[<--] (Interactive) [{self.model_path}] Completion done in {streaming_duration}s")
+        streaming_duration = round(time.time() - stream_start_time, 2)
+        logging.debug(f"[<--] (Interactive) [{self.model_path}] Completion done in {streaming_duration}s ({tokens} tokens)")
 
-    async def completion_async(self, messages=None, temperature=0.7, repetition_penalty=1.2, top_p=0.7, max_tokens=512, top_k=40):
+    # Function for message completions
+    def completion(self, messages=None, temperature=0.7, repetition_penalty=1.2, top_p=0.7, max_tokens=512):
         logging.debug(f"[-->] [{self.model_path}] Request for completion")
-
         payload = {
             "model": self.tb_model,
             "messages": messages,
             "temperature": temperature,
             "repetition_penalty": repetition_penalty,
             "top_p": top_p,
-            "top_k": top_k,
             "stream": True,
             "max_tokens": max_tokens
         }
+        data = json.dumps(payload)
+        response = requests.post(f"http://{self.host}:{self.port}" + '/v1/chat/completions', data=data, stream=True)
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(f"http://{self.host}:{self.port}/v1/chat/completions", json=payload, headers=self.headers) as response:
-                stream_start_time = time.time()
-                tokens = 0
-                try:
-                    async for chunk in response.content.iter_any():
-                        chunk = chunk.decode('utf-8').replace("data:", "")
-                        if is_valid_json(chunk):
-                            chunk_data = json.loads(chunk)
-                            if 'choices' in chunk_data:
-                                if 'content' in chunk_data['choices'][0]["delta"]:
-                                    yield json.dumps({"text": chunk_data['choices'][0]["delta"]["content"]}) + "\n"
-                except Exception as e:
-                    logging.error('Chunk:', str(e))
+        stream_start_time = time.time()
+        response_stream = response.iter_content(chunk_size=1024, decode_unicode=True)
+        tokens = 0;
+        for chunk in response_stream:
+            try:
+                chunk = chunk.replace("data:", "")
+                if is_valid_json(chunk):
+                    chunk_data = json.loads(chunk) 
+                    if 'choices' in chunk_data:
+                        if 'content' in chunk_data['choices'][0]["delta"]:
+                            yield json.dumps({"text": chunk_data['choices'][0]["delta"]["content"]})+"\n"
+                            
+         
+            except Exception as e:
+                logging.error('Chunk :', str(e))
 
-                streaming_duration = round(time.time() - stream_start_time, 2)
-                logging.debug(f"[<--] (Completion) [{self.model_path}] Completion done in {streaming_duration}s")
+        streaming_duration = round(time.time() - stream_start_time, 2)
+        logging.debug(f"[<--] (Completion) [{self.model_path}] Completion done in {streaming_duration}s")
 
     async def destroy(self):
         if self.process:
