@@ -1,0 +1,25 @@
+{
+    "api_tokens": [
+        "YOUR_API_KEY"
+    ],
+    "models": {
+        "diffusions": [
+            {
+                "gpu_id": "DIFFUSION_GPUS",
+                "modelName": "dataautogpt3/OpenDalleV1.1",
+                "modelType": "Text2Image"
+            },
+            {
+                "modelName": "stabilityai/stable-diffusion-xl-refiner-1.0",
+                "modelType": "Image2Image"
+            }
+        ],
+        "turbomind": [
+            {
+                "gpu_id": "TURBOMIND_GPUS",
+                "modelName": "CortexLM/qwen-72b-chat-w4",
+                "modelType": "qwen-14b"
+            }
+        ]
+    }
+}
