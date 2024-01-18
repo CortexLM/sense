@@ -166,7 +166,7 @@ class TurboMind:
 
     # Function to start the TurboMind subprocess
     def start_process(self):
-        # Create a thread to run the subprocess
+        # Create a thread to run the subprocessmode
         self.process_thread = threading.Thread(target=self.run_subprocess)
         self.process_thread.start()
 
@@ -176,7 +176,7 @@ class TurboMind:
             environment = os.environ.copy()
             environment["CUDA_VISIBLE_DEVICES"] = self.gpu_id
             
-            command = f"lmdeploy convert --model_name {self.tb_model_type} --model_path {self.base_directory}{self.model_path}model --dst_path {self.base_directory}{self.model_path}workspace --model_format awq --group_size 128 --tp {count_gpu(self.gpu_id)}"
+            command = f"lmdeploy convert {self.tb_model_type} {self.base_directory}{self.model_path}model --dst-path {self.base_directory}{self.model_path}workspace --model-format awq --group-size 128 --tp {count_gpu(self.gpu_id)}"
             logging.info(f'Spawning build model for {self.model_path}')
 
             try:
