@@ -23,7 +23,7 @@ class ModelManager:
         if not os.path.exists(self.models_directory):
             os.makedirs(self.models_directory)
         self.config = asyncio.run(self.load_config("config.json"))
-        if not pulse:
+        if True:
             asyncio.run(self.load_models_from_config())
 
     def get_random_port(self):
