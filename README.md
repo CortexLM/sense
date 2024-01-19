@@ -27,7 +27,7 @@ This repository includes a daemon service designed to automate the inference pro
 
 **Download the script:**
 
-```wget -q https://raw.githubusercontent.com/CortexLM/sense/0.2.0/install.sh```
+```wget -q https://raw.githubusercontent.com/CortexLM/sense/0.2.1/install.sh```
 
 **Make the script executable:**
 
@@ -74,7 +74,13 @@ Turbomind ```0,1,2,3```
 
 **Run:**
 
-```pm2 start run.py --name sense -- --process_name sense_daemon --host 0.0.0.0 --port 8080 --pulse False```
+Miners ⛏️
+
+```pm2 start run.py --name sense -- --process_name sense_daemon --host 0.0.0.0 --port 8080```
+
+Validators 🥇
+
+```pm2 start run.py --name sense -- --process_name sense_daemon --host 0.0.0.0 --port 8080 --prevent_oom```
 
 ## 📋 Requirements
 
