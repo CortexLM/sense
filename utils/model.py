@@ -13,8 +13,9 @@ class ModelManager:
     A class to manage downloading, configuring, and running various machine learning models asynchronously.
     """
 
-    def __init__(self, pulse=False):
+    def __init__(self, pulse=False, prevent_oom=False):
         self.models = {}
+        self.prevent_oom = prevent_oom
         self.base_directory = os.getcwd()
         self.models_directory = os.path.join(self.base_directory, 'models')
         self.available_ports = [6000,6001,6002,6003,6004,6005,6006]
@@ -22,7 +23,7 @@ class ModelManager:
         if not os.path.exists(self.models_directory):
             os.makedirs(self.models_directory)
         self.config = asyncio.run(self.load_config("config.json"))
-        if pulse != True:
+        if not pulse:
             asyncio.run(self.load_models_from_config())
 
     def get_random_port(self):
@@ -122,7 +123,7 @@ class ModelManager:
             await self.fetch_model(model_name=model_name)
             yield {"status": "downloaded", "message": "Model downloaded"}
             yield {"status": "start_process", "message": "Starting process"}
-            tm = TurboMind(self, model_path=model_path, model_name=model_name, gpu_id=n_gpus, tb_model_type=model_type, port=self.get_random_port())
+            tm = TurboMind(self, model_path=model_path, model_name=model_name, gpu_id=n_gpus, tb_model_type=model_type, port=self.get_random_port(), prevent_oom=self.prevent_oom)
             yield {"status": "wait_status", "message": "Wait for status"}
             if tm.wait_for_tb_model_status():
                 tm.warm_up(gpu_id=n_gpus)
