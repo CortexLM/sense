@@ -77,10 +77,12 @@ Turbomind ```0,1,2,3```
 Miners ⛏️
 
 ```pm2 start run.py --name sense -- --process_name sense_daemon --host 0.0.0.0 --port 8080```
+If an OOM error occurs, please modify --instance_num and decrease it.
 
 Validators 🥇
 
-```pm2 start run.py --name sense -- --process_name sense_daemon --host 0.0.0.0 --port 8080 --prevent_oom```
+```pm2 start run.py --name sense -- --process_name sense_daemon --host 0.0.0.0 --port 8080 --prevent_oom --instance_num 1```
+
 
 ## 📋 Requirements
 
