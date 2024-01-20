@@ -191,13 +191,13 @@ class TurboMind:
     # Function to run the TurboMind subprocess
     def run_subprocess(self):
         if self.prevent_oom:
-            logging.warning('Prevent OOM, set cache_max_entry_count 0.5 -> 0.2. Do not use this option if you are a miner, unless really necessary. It may affect performance')
+            logging.warning('Prevent OOM, set cache_max_entry_count 0.5 -> 0. Do not use this option if you are a miner, unless really necessary. It may affect performance')
             config_file_path = f"{self.base_directory}{self.model_path}workspace/triton_models/weights/config.ini"
 
             config = configparser.ConfigParser()
             config.read(config_file_path)
 
-            config.set('llama', 'cache_max_entry_count', '0.2')
+            config.set('llama', 'cache_max_entry_count', '0')
 
             with open(config_file_path, 'w') as config_file:
                 config.write(config_file)
