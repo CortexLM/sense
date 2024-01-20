@@ -203,8 +203,8 @@ class TurboMind:
                 config.write(config_file)
         environment = os.environ.copy()
         environment["CUDA_VISIBLE_DEVICES"] = self.gpu_id
-        
-        command = f"lmdeploy serve api_server {self.base_directory}{self.model_path}workspace --server-name {self.host} --server-port {self.port} --tp {count_gpu(self.gpu_id)}"
+        logging.debug(f'Batch size limit = {self.instance_num}. If OOM errors occur, lower the batch size limit with --instance_num')
+        command = f"lmdeploy serve api_server --instance_num {self.instance_num} {self.base_directory}{self.model_path}workspace --server-name {self.host} --server-port {self.port} --tp {count_gpu(self.gpu_id)}"
         logging.info(f'Spawning 1 process for {self.model_path}')
 
         try:

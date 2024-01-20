@@ -6,7 +6,7 @@ from loguru import logger
 
 class AutoUpdater:
     def __init__(self):
-        self.version_url = "https://raw.githubusercontent.com/CortexLM/sense/0.2.1/VERSION"
+        self.version_url = "https://raw.githubusercontent.com/CortexLM/sense/master/VERSION"
         self.local_version_file = "VERSION"
         self.local_version = None
         logger.success('Auto updater initialized')

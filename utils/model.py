@@ -13,10 +13,11 @@ class ModelManager:
     A class to manage downloading, configuring, and running various machine learning models asynchronously.
     """
 
-    def __init__(self, pulse=False, prevent_oom=False):
+    def __init__(self, pulse=False, prevent_oom=False, instance_num=8):
         self.models = {}
         self.prevent_oom = prevent_oom
         self.base_directory = os.getcwd()
+        self.instance_num = instance_num
         self.models_directory = os.path.join(self.base_directory, 'models')
         self.available_ports = [6000,6001,6002,6003,6004,6005,6006]
         self.used_ports = set()
@@ -123,7 +124,7 @@ class ModelManager:
             await self.fetch_model(model_name=model_name)
             yield {"status": "downloaded", "message": "Model downloaded"}
             yield {"status": "start_process", "message": "Starting process"}
-            tm = TurboMind(self, model_path=model_path, model_name=model_name, gpu_id=n_gpus, tb_model_type=model_type, port=self.get_random_port(), prevent_oom=self.prevent_oom)
+            tm = TurboMind(self, model_path=model_path, model_name=model_name, gpu_id=n_gpus, tb_model_type=model_type, port=self.get_random_port(), prevent_oom=self.prevent_oom, instance_num=self.instance_num)
             yield {"status": "wait_status", "message": "Wait for status"}
             if tm.wait_for_tb_model_status():
                 tm.warm_up(gpu_id=n_gpus)
