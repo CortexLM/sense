@@ -33,7 +33,7 @@ class SubCliConfig:
             "turbomind": [
                 {
                     "gpu_id": "0,1,2,3",
-                    "modelName": "TheBloke|nontoxic-bagel-34b-v0.2-AWQ",
+                    "modelName": "TheBloke|bagel-dpo-34b-v0.2-AWQ",
                     "modelType": "llama2"
                 }
             ]
