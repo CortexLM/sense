@@ -7,7 +7,7 @@ from huggingface_hub import snapshot_download
 from utils.turbomind import TurboMind
 from utils.sdfast import SDFast
 import random
-
+path = os.path.dirname(os.path.realpath(__file__))
 class ModelManager:
     """
     A class to manage downloading, configuring, and running various machine learning models asynchronously.
@@ -51,7 +51,7 @@ class ModelManager:
         config_path (str): Path to the configuration file.
         """
         try:
-            async with aiofiles.open(config_path, 'r') as config_file:
+            async with aiofiles.open(f"{path}/../{config_path}", 'r') as config_file:
                 return json.loads(await config_file.read())
         except FileNotFoundError:
             logging.error(f"Configuration file {config_path} not found.")
