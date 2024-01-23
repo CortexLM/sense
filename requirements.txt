@@ -15,3 +15,4 @@ aiofiles
 fastapi
 uvicorn
 shortuuid
+protobuf
