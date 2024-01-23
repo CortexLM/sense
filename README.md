@@ -23,6 +23,8 @@ This repository includes a daemon service designed to automate the inference pro
 
 ## 🔧 Installation
 
+**Runpod Template** :  https://www.runpod.io/console/explore/1gty0lb4lw
+
 **To install the script, follow these steps:**
 
 **Download the script:**
