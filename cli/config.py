@@ -33,7 +33,7 @@ class SubCliConfig:
             "turbomind": [
                 {
                     "gpu_id": "0,1,2,3",
-                    "modelName": "CortexLM/platyi-34b-llama-q-w4",
+                    "modelName": "TheBloke|bagel-dpo-34b-v0.2-AWQ",
                     "modelType": "llama2"
                 }
             ]
