@@ -5,7 +5,7 @@ from subprocess import Popen, PIPE, run
 import sys
 from utils.logging import logging
 import subprocess
-
+import os
 class SenseProcessManager:
     def __init__(self):
         pass
@@ -31,22 +31,24 @@ class SenseProcessManager:
             else:
                 # Otherwise, add the argument to the list of arguments
                 arguments.append(arg)
+        environment = os.environ.copy()
         pm2_command = f"pm2 -f start --interpreter python3 sense.py --name {process_name}"
         if arguments:
             pm2_command += f" -- {' '.join(arguments)}"
-        run(pm2_command, shell=True, check=True)
+        run(pm2_command, shell=True, check=True, env=environment)
 
     @staticmethod
     def check_for_updates(process_name, interval=60):
+        environment = os.environ.copy()
         updater = AutoUpdater()
         while True:
             time.sleep(interval)
             if updater.check_update():
                 pm2_command_stop = f"pm2 stop {process_name}"
-                process = Popen(pm2_command_stop, shell=True, stdout=PIPE, stderr=PIPE)
+                process = Popen(pm2_command_stop, shell=True, stdout=PIPE, stderr=PIPE, env=environment)
                 process.communicate()
                 pm2_command_start = f"pm2 start {process_name}"
-                process = Popen(pm2_command_start, shell=True, stdout=PIPE, stderr=PIPE)
+                process = Popen(pm2_command_start, shell=True, stdout=PIPE, stderr=PIPE, env=environment)
                 process.communicate()
 
                 logging.debug("PM2 process successfully restarted.")
