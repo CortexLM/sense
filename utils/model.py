@@ -7,7 +7,7 @@ from huggingface_hub import snapshot_download
 from utils.turbomind import TurboMind
 from utils.sdfast import SDFast
 import random
-
+path = os.path.dirname(os.path.realpath(__file__))
 class ModelManager:
     """
     A class to manage downloading, configuring, and running various machine learning models asynchronously.
@@ -51,7 +51,7 @@ class ModelManager:
         config_path (str): Path to the configuration file.
         """
         try:
-            async with aiofiles.open(config_path, 'r') as config_file:
+            async with aiofiles.open(f"{path}/../{config_path}", 'r') as config_file:
                 return json.loads(await config_file.read())
         except FileNotFoundError:
             logging.error(f"Configuration file {config_path} not found.")
@@ -85,7 +85,7 @@ class ModelManager:
         await self.load_turbomind(models.get('turbomind', []))
         gpu_ids = models["diffusions"][0]["gpu_id"].split(",")  # Split the GPU IDs string into a list
         logging.debug('Async loading models. Please wait')
-        task1 = self.allocate_wrapper(engine="turbomind", model_name="CortexLM|qwen-72b-chat-w4", n_gpus=models["turbomind"][0]["gpu_id"], tb_model_type="qwen-14b")
+        task1 = self.allocate_wrapper(engine="turbomind", model_name="CortexLM/platyi-34b-llama-q-w4", n_gpus=models["turbomind"][0]["gpu_id"], tb_model_type="llama2")
         tasks2 = [self.allocate_wrapper(engine="sdfast", model_name="dataautogpt3|OpenDalleV1.1", n_gpus=gpu_id) for gpu_id in gpu_ids]
 
         # Executing all tasks simultaneously

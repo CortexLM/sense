@@ -106,6 +106,7 @@ class TurboMind:
         self.tb_model_type = tb_model_type
         self.gpu_id = gpu_id
         self.base_directory = instance.base_directory
+        self.cache_max_entry_count = 0.5
         # Load TurboMind Model
         self.run_build_process()
         self.start_process()
@@ -176,7 +177,7 @@ class TurboMind:
             environment = os.environ.copy()
             environment["CUDA_VISIBLE_DEVICES"] = self.gpu_id
             
-            command = f"lmdeploy convert --model-name {self.tb_model_type} --model-path {self.base_directory}{self.model_path}model --dst_path {self.base_directory}{self.model_path}workspace --model-format awq --group-size 128 --tp {count_gpu(self.gpu_id)}"
+            command = f"lmdeploy convert {self.tb_model_type} {self.base_directory}{self.model_path}model --dst-path {self.base_directory}{self.model_path}workspace --model-format awq --group-size 128 --tp {count_gpu(self.gpu_id)}"
             logging.info(f'Spawning build model for {self.model_path}')
 
             try:
@@ -191,20 +192,12 @@ class TurboMind:
     # Function to run the TurboMind subprocess
     def run_subprocess(self):
         if self.prevent_oom:
-            logging.warning('Prevent OOM, set cache_max_entry_count 0.5 -> 0. Do not use this option if you are a miner, unless really necessary. It may affect performance')
-            config_file_path = f"{self.base_directory}{self.model_path}workspace/triton_models/weights/config.ini"
-
-            config = configparser.ConfigParser()
-            config.read(config_file_path)
-
-            config.set('llama', 'cache_max_entry_count', '0')
-
-            with open(config_file_path, 'w') as config_file:
-                config.write(config_file)
+            logging.warning('Prevent OOM, set cache_max_entry_count 0.5 -> 0.2. Do not use this option if you are a miner, unless really necessary. It may affect performance')
+            self.cache_max_entry_count = 0.2
         environment = os.environ.copy()
         environment["CUDA_VISIBLE_DEVICES"] = self.gpu_id
         logging.debug(f'Batch size limit = {self.instance_num}. If OOM errors occur, lower the batch size limit with --instance_num')
-        command = f"lmdeploy serve api_server --instance_num {self.instance_num} {self.base_directory}{self.model_path}workspace --server-name {self.host} --server-port {self.port} --tp {count_gpu(self.gpu_id)}"
+        command = f"lmdeploy serve api_server {self.base_directory}{self.model_path}workspace --server-name {self.host} --server-port {self.port} --tp {count_gpu(self.gpu_id)} --cache-max-entry-count {self.cache_max_entry_count}"
         logging.info(f'Spawning 1 process for {self.model_path}')
 
         try:
