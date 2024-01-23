@@ -30,7 +30,7 @@ def main():
     
     logging.info("Initializing Sense..")
     try:
-        with open('{path}/config.json', 'r') as config_file:
+        with open(f'{path}/config.json', 'r') as config_file:
             config = json.load(config_file)
     except FileNotFoundError:
         logging.error("The 'config.json' file has not been found. Make sense config init to initialize the default configuration")
