@@ -23,11 +23,13 @@ This repository includes a daemon service designed to automate the inference pro
 
 ## 🔧 Installation
 
+**Runpod Template** :  https://www.runpod.io/console/explore/1gty0lb4lw
+
 **To install the script, follow these steps:**
 
 **Download the script:**
 
-```wget -q https://raw.githubusercontent.com/CortexLM/sense/0.2.2/install.sh```
+```wget -q https://raw.githubusercontent.com/CortexLM/sense/0.2.3/install.sh```
 
 **Make the script executable:**
 

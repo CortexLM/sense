@@ -1,9 +1,11 @@
 import atexit
 import utils.system as system
 import signal
+import os
+path = os.path.dirname(os.path.realpath(__file__))
 def main():
     from utils.logging import logging
-    with open("VERSION", "r") as f:
+    with open(f"{path}/VERSION", "r") as f:
         local_version = f.read().strip()
     print(f"""
 ░▄▀▀▒██▀░█▄░█░▄▀▀▒██▀░░░▄▀▀▒██▀▒█▀▄░█▒█▒██▀▒█▀▄
@@ -28,7 +30,7 @@ def main():
     
     logging.info("Initializing Sense..")
     try:
-        with open('config.json', 'r') as config_file:
+        with open(f'{path}/config.json', 'r') as config_file:
             config = json.load(config_file)
     except FileNotFoundError:
         logging.error("The 'config.json' file has not been found. Make sense config init to initialize the default configuration")
