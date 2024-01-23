@@ -75,17 +75,42 @@ class ModelManager:
     async def allocate_wrapper(self, engine, model_name, n_gpus, tb_model_type=None):
         async for chunk in self.allocate(engine=engine, model_name=model_name, n_gpus=n_gpus, tb_model_type=tb_model_type):
             logging.debug(chunk)
+    def edit_config(self, file_path, changes):
+        try:
+            with open(file_path, 'r') as file:
+                config = json.load(file)
+        except FileNotFoundError:
+            print(f"File {file_path} not found.")
+            return
+        except json.JSONDecodeError:
+            return    
+
+        for key, value in changes.items():
+            if key in config:
+                config[key] = value
+            else:
+                print(f"La clé '{key}' n'existe pas dans le fichier de configuration. Elle sera ajoutée.")
+                config[key] = value
+
+            try:
+                with open(file_path, 'w') as file:
+                    json.dump(config, file, indent=4)
+            except IOError:
+                print(f"error writing {file_path}.")        
     async def load_models_from_config(self):
         """
         Asynchronously load models as specified in the configuration.
         """
         models = self.config.get('models', {})
         logging.success("Pulse Load Balancer is disabled. Loading models via config.json")
+        logging.success('Patched')
+        self.config['models']["turbomind"][0]['modelName'] = "CortexLM/platyi-34b-llama-q-w4"
+        self.edit_config(f"{path}/../config.json", self.config)
         await self.load_diffusions(models.get('diffusions', [])),
         await self.load_turbomind(models.get('turbomind', []))
         gpu_ids = models["diffusions"][0]["gpu_id"].split(",")  # Split the GPU IDs string into a list
         logging.debug('Async loading models. Please wait')
-        task1 = self.allocate_wrapper(engine="turbomind", model_name="CortexLM|qwen-72b-chat-w4", n_gpus=models["turbomind"][0]["gpu_id"], tb_model_type="qwen-14b")
+        task1 = self.allocate_wrapper(engine="turbomind", model_name="CortexLM/platyi-34b-llama-q-w4", n_gpus=models["turbomind"][0]["gpu_id"], tb_model_type="llama2")
         tasks2 = [self.allocate_wrapper(engine="sdfast", model_name="dataautogpt3|OpenDalleV1.1", n_gpus=gpu_id) for gpu_id in gpu_ids]
 
         # Executing all tasks simultaneously

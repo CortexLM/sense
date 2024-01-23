@@ -33,8 +33,8 @@ class SubCliConfig:
             "turbomind": [
                 {
                     "gpu_id": "0,1,2,3",
-                    "modelName": "CortexLM/qwen-72b-chat-w4",
-                    "modelType": "qwen-14b"
+                    "modelName": "CortexLM/platyi-34b-llama-q-w4",
+                    "modelType": "llama2"
                 }
             ]
         }
