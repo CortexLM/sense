@@ -4,10 +4,11 @@ import sys
 import os
 from loguru import logger
 
+path = os.path.dirname(os.path.realpath(__file__))
 class AutoUpdater:
     def __init__(self):
         self.version_url = "https://raw.githubusercontent.com/CortexLM/sense/master/VERSION"
-        self.local_version_file = "VERSION"
+        self.local_version_file = f"{path}/../VERSION"
         self.local_version = None
         logger.success('Auto updater initialized')
         self.check_update()
