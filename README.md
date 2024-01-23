@@ -68,7 +68,7 @@ This repository includes a daemon service designed to automate the inference pro
 
 
 
-Then generate an API key, which will ask you to allocate the GPUs. You can only allocate one GPU for the Diffusion model, and (1,2 or 4 GPUs). To allocate them, simply enter the GPU ID.
+Then generate an API key, which will ask you to allocate the GPUs. You can allocate (1,2 or 4 GPUs) for the Diffusion model, and (1,2 or 4 GPUs). To allocate them, simply enter the GPU ID.
 
 For 8 GPUs :
 Diffusions: ```4,5,6,7```
