@@ -6,6 +6,7 @@ import sys
 from utils.logging import logging
 import subprocess
 import os
+path = os.path.dirname(os.path.realpath(__file__))
 class SenseProcessManager:
     def __init__(self):
         pass
@@ -32,7 +33,7 @@ class SenseProcessManager:
                 # Otherwise, add the argument to the list of arguments
                 arguments.append(arg)
         environment = os.environ.copy()
-        pm2_command = f"pm2 -f start --interpreter python3 sense.py --name {process_name}"
+        pm2_command = f"pm2 -f start --interpreter python3 {path}/sense.py --name {process_name}"
         if arguments:
             pm2_command += f" -- {' '.join(arguments)}"
         run(pm2_command, shell=True, check=True, env=environment)
