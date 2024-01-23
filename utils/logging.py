@@ -5,9 +5,9 @@ import re
 
 # Check if the file logs/latest.log exists
 path = os.path.dirname(os.path.realpath(__file__))
-if os.path.isfile('{path}/../logs/latest.log'):
+if os.path.isfile(f'{path}/../logs/latest.log'):
     # Open the file in read mode
-    with open('logs/latest.log', 'r') as file:
+    with open(f'{path}/../logs/latest.log', 'r') as file:
         # Read the first line
         first_line = file.readline()
         
