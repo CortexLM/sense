@@ -41,13 +41,14 @@ def block_thread(func):
     return wrapper
 # Singleton class for SDFastAPI
 class SDFastAPI:
-    def __init__(self, model_name, pipeline, warm_up=True):
+    def __init__(self, model_name, pipeline, warm_up=True, worker_id=0):
         self.model_name = model_name
         self.pipeline = pipeline
         self.model = self.load_model(AutoPipelineForText2Image if pipeline == "t2i" else AutoPipelineForImage2Image)
         self.config = CompilationConfig.Default()
         self.configure_performance()
         self.model = compile(self.model, self.config)
+        self.worker_id = worker_id
         logging.warning('First diffusion generation will generate warnings. This does not compromise daemon operation.')
         self.warm_up() if warm_up else None
         logging.info(f'{self.model_name} loaded.')
@@ -107,13 +108,14 @@ parser = argparse.ArgumentParser(description='Configure the SD Fast API service'
 parser.add_argument('--model_name', type=str, default='segmind/Segmind-Vega')
 parser.add_argument('--model_refiner', type=str, default='segmind/Segmind-Vega')
 parser.add_argument('--model_type', type=str, default='t2i')
+parser.add_argument('--worker_id', type=int, default=0)
 parser.add_argument('--host', type=str, default="127.0.0.1")
 parser.add_argument('--port', type=int, default=6000)
 args = parser.parse_args()
 
 # Global variable to store the SDFastAPI instance
-sd_fast_api = SDFastAPI(model_name=args.model_name, pipeline=args.model_type) if is_running_under_uvicorn() else None
-sd_fast_api_refiner = SDFastAPI(model_name=args.model_refiner, pipeline="i2i") if is_running_under_uvicorn() and args.model_refiner else None
+sd_fast_api = SDFastAPI(model_name=args.model_name, pipeline=args.model_type, worker_id=args.worker_id) if is_running_under_uvicorn() else None
+sd_fast_api_refiner = SDFastAPI(model_name=args.model_refiner, pipeline="i2i", worker_id=args.worker_id) if is_running_under_uvicorn() and args.model_refiner else None
 
 # Pydantic models for API requests
 class TextToImage(BaseModel):
@@ -143,10 +145,10 @@ def ping():
 def text_to_image(request: TextToImage):
     start_time = time.time()
 
-    logging.debug(f"[-->] (Text2Image) [{sd_fast_api.model_name}] Request for Image Generation")
+    logging.debug(f"➡️  [cuda/{sd_fast_api.worker_id}] text2image incoming")
     # Implement logic to handle large GPU requirements if necessary
     if sd_fast_api.pipeline != "t2i":
-        return {"error": "Text To Image is not supported for this model"}
+        return {"error": "Text2Image is not supported for this model"}
     if request.width + request.height > 2048 or request.batch_size > 1:
         logging.error('GPU requirements too high')
         return {"error": "Image dimensions or batch size too large for GPU"}
@@ -161,7 +163,7 @@ def text_to_image(request: TextToImage):
     base64_images = []
     for img in output_images:
         if request.refiner and sd_fast_api_refiner:
-            logging.debug(f"[<-->] (Refiner) Applying refiner")
+            logging.debug(f"✨  [cuda/{sd_fast_api.worker_id}] applying refiner")
             img = sd_fast_api_refiner.inference(image=img,
                                                 prompt=request.prompt,
                                                 height=request.height,
@@ -174,7 +176,7 @@ def text_to_image(request: TextToImage):
 
     end_time = time.time()
     processing_time = end_time - start_time
-    logging.debug(f"[<--] (Text2Image) Processing Time: {round(processing_time, 2)} seconds")
+    logging.debug(f"⬅️  [cuda/{sd_fast_api.worker_id}] text2image, processing time={round(processing_time, 2)}s,size={request.width}x{request.height}")
 
     return {"images": base64_images, "processing_time": processing_time}
 

@@ -2,8 +2,10 @@ import asyncio
 from utils.logging import logging
 import json
 import os
+
 import aiofiles
 from huggingface_hub import snapshot_download
+from fastapi import HTTPException
 from utils.turbomind import TurboMind
 from utils.sdfast import SDFast
 import random
@@ -12,7 +14,25 @@ class ModelManager:
     """
     A class to manage downloading, configuring, and running various machine learning models asynchronously.
     """
+    async def get_worker(self, model_name: str):
+        model = self.models.get(model_name)
+        if not model:
+            raise HTTPException(status_code=404, detail="Model not found or stopped")
 
+        worker_count = len(model['workers'])
+        
+        if worker_count == 0:
+            raise HTTPException(status_code=500, detail="No workers available for the model")
+
+        queue = model['workers'].get('queue', 0)         
+        if queue + 2 >= worker_count:
+            model['workers']['queue'] = 0
+        else:
+            model['workers']['queue'] = queue + 1
+        
+        logging.debug(f'Use worker {queue}')
+        return model['workers'][queue]
+    
     def __init__(self, pulse=False, prevent_oom=False, instance_num=8):
         self.models = {}
         self.prevent_oom = prevent_oom

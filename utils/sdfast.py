@@ -52,11 +52,11 @@ class SDFast:
         """
         environment = os.environ.copy()
         environment["CUDA_VISIBLE_DEVICES"] = str(self.gpu_id)
-        command = f"python3 api/sdfast.py --host {self.host} --port {self.port} --model_name {self.base_directory}{self.model_path} --model_refiner {self.base_directory}{self.model_refiner} --model_type {self.model_type}"
+        command = f"python3 api/sdfast.py --host {self.host} --port {self.port} --model_name {self.base_directory}{self.model_path} --model_refiner {self.base_directory}{self.model_refiner} --model_type {self.model_type} --worker_id {self.gpu_id}"
         logging.info(f'Spawning 1 process for {self.model_path}')
 
         try:
-            self.process = subprocess.Popen(shlex.split(command), shell=False, env=environment, preexec_fn=os.setsid, stdout=subprocess.PIPE)
+            self.process_tb = subprocess.Popen(shlex.split(command), shell=False, env=environment, preexec_fn=os.setsid, stdout=subprocess.PIPE)
         except subprocess.CalledProcessError as e:
             logging.error(f"Error when executing the command: {e}")
         except Exception as e:
@@ -127,7 +127,8 @@ class SDFast:
         return response
         
     def destroy(self):
-        if self.process:
+        print(self.process_tb)
+        if self.process_tb:
             try:
                 logging.info(f"Stop {self.model_path} model..")
                 model = self.instance.models.get(self.model_name)

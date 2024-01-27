@@ -78,6 +78,7 @@ class DaemonAPI:
     def __init__(self, model, api_tokens):
         self.app = FastAPI(docs_url="/")
         self.models = model.models
+        self.model = model
         self.known_tokens = set(api_tokens)
         get_bearer_token = HTTPBearer(auto_error=False)
         async def get_token(
@@ -91,25 +92,6 @@ class DaemonAPI:
                 )
             return token
         
-
-        async def get_worker(model_name: str):
-            model = self.models.get(model_name)
-            if not model:
-                raise HTTPException(status_code=404, detail="Model not found or stopped")
-
-            worker_count = len(model['workers'])
-            
-            if worker_count == 0:
-                raise HTTPException(status_code=500, detail="No workers available for the model")
-
-            queue = model['workers'].get('queue', 0)         
-            if queue + 2 >= worker_count:
-                model['workers']['queue'] = 0
-            else:
-                model['workers']['queue'] = queue + 1
-            
-            logging.debug(f'Use worker {queue}')
-            return model['workers'][queue]
         @self.app.get("/system_info", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
         async def get_active_models(token: str = Depends(get_token)):
             models_list = jsonable_encoder(get_all_system_info())
@@ -124,16 +106,17 @@ class DaemonAPI:
         
         @self.app.get("/model/{model_name}/stop", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
         async def stop_model(model_name: str, token: str = Depends(get_token)):
-            model = self.models.get(model_name)
+            model = self.models.get(model_name)         
             if not model:
                 raise HTTPException(status_code=404, detail="Model not found or stopped")
             
             try:
                 await model.destroy()
                 return {"status": "success", "message": "Model stopped"}
-            except:
+            except Exception as e:
+                print(e)
                 return {"status": "error", "message": "Model not stopped"}
-
+            
         @self.app.post("/model/{model_name}/start", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
         async def start_model(model_name: str, interact: Model, token: str = Depends(get_token)):            
             response_stream = model.allocate(engine=interact.engine, model_name=model_name, n_gpus=interact.n_gpus, tb_model_type=interact.tb_model_type)
@@ -146,7 +129,7 @@ class DaemonAPI:
 
         @self.app.post("/diffusion/{model_name}/text_to_image", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
         async def diffusion_text_to_image(model_name: str, interact: TextToImage, token: str = Depends(get_token)):
-            model = await get_worker(model_name)
+            model = await self.model.get_worker(model_name)
             if not model:
                 raise HTTPException(status_code=404, detail="Model not found or stopped")
             response = await model.t2i(
@@ -162,7 +145,7 @@ class DaemonAPI:
         
         @self.app.post("/diffusion/{model_name}/image_to_image", responses={status.HTTP_401_UNAUTHORIZED: dict(model=UnauthorizedMessage)})
         async def diffusion_image_to_image(model_name: str, interact: ImageToImage, token: str = Depends(get_token)):
-            model = await get_worker(model_name)
+            model = await self.model.get_worker(model_name)
             if not model:
                 raise HTTPException(status_code=404, detail="Model not found or stopped")
             response = await model.i2i(
