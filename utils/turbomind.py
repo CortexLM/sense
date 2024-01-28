@@ -1,3 +1,4 @@
+import multiprocessing
 import threading
 import requests
 import time
@@ -109,39 +110,37 @@ class TurboMind:
         # Load TurboMind Model
         self.run_build_process()
         self.start_process()
-        loop = asyncio.get_event_loop()
-        loop.create_task(self.check_endpoint())
+        mon_thread = threading.Thread(target=self.check_endpoint)
+
+        mon_thread.start()
+
 
     def on_failure(self):
         self.start_process()
         self.wait_for_tb_model_status()
         self.status = 1
 
-    async def check_endpoint(self, check_interval=10, timeout=10):
-        async with aiohttp.ClientSession() as session:
-            while True:
-                if self.status == 1:
-                    try:
-                        async with session.get(f"http://{self.host}:{self.port}/v1/models", timeout=timeout) as response:
-                            if response.status == 200:
-                                pass
-                            else:
-                                self.status = 0
-                                logging.error("Endpoint is down, auto restart")
-                                self.on_failure()
-                                break
-                    except asyncio.TimeoutError:
+    def check_endpoint(self, check_interval=10, timeout=10):
+        while True:
+            if self.status == 1:
+                try:
+                    response = requests.get(f"http://{self.host}:{self.port}/v1/models", timeout=timeout)
+                    if response.status_code == 200:
+                        pass
+                    else:
                         self.status = 0
                         logging.error("Endpoint is down, auto restart")
                         self.on_failure()
-                        break
-                    except Exception as e:
-                        self.status = 0
-                        logging.error("Endpoint is down, auto restart")
-                        self.on_failure()
-                        break
+                except requests.exceptions.Timeout:
+                    self.status = 0
+                    logging.error("Endpoint is down, auto restart")
+                    self.on_failure()
+                except requests.exceptions.RequestException as e:
+                    self.status = 0
+                    logging.error("Endpoint is down, auto restart")
+                    self.on_failure()
 
-                    await asyncio.sleep(check_interval)
+            time.sleep(check_interval)
     def is_running(self):
         stat = os.system("ps -p %s &> /dev/null" % self.process.pid)
         return stat == 0
