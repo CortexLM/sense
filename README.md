@@ -99,7 +99,7 @@ RAM: 32GB
 
 ### **Miners :**
 
-5x24GB GPU or 2x80GB GPU
+8x 4090 GPUs
 
 Storage: 500GB
 
