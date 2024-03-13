@@ -1,125 +1,40 @@
 <div align="center">
 
-# **⚡️ Sense - Daemon for Flavia Project**
-Daemon for Model Inference and Auto-Scaling for ρ Subnet
+# **Sense Daemon**
 
 [![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)](https://discord.gg/bittensor)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
 
 
-[Discord](https://discord.gg/bittensor) • [Cortex Foundation](https://cortex.foundation/) • [Bittensor](https://bittensor.com/whitepaper)
 </div>
 
 #
-### 🔴 This is an alpha version. Please report any bugs or suggest any improvements.
-### 📋 Introduction
-This repository includes a daemon service designed to automate the inference process for Large Language Models (LLMs) / GenAI models and manage the auto-scaling of resources. The daemon intelligently adjusts computational resources in response to real-time demand and system performance, ensuring high efficiency and robust model performance.
+### About Sense
 
-### ✨ Features
-- **🤖 Automated Model Inference:** Streamlines the process of deploying LLMs for inference tasks.
-- **⚖️ Dynamic Auto-Scaling:** Adjusts resource allocation based on current workload and performance metrics, optimizing for cost and efficiency.
-- **👀 Continuous Monitoring:** Regularly checks system health and performance, ensuring reliable operation.
-- **🛠️ Error Handling and Failover:** Implements robust error handling and failover mechanisms to maintain continuous service.
+Sense is a daemon service framework that automates the inference process for Large Language Models (LLMs) / GenAI models and manages the auto-scaling of resources with an intelligent, adaptive approach. It is designed to dynamically adjust computational resources based on real-time demand and system performance, ensuring optimal efficiency and robust model performance. We believe that managing LLMs/GenAI should be a seamless and efficient process, freeing developers to focus on innovation rather than resource management. Sense simplifies the complexities of scaling and resource optimization, making it an essential tool for any project involving large language models.
 
-## 🔧 Installation
+**NOTICE:** By utilizing this software, you are required to consent to the Terms and Agreements outlined in the [terms and conditions document](https://example.com). Implicit agreement to these terms and conditions is assumed upon downloading and executing this software.
 
-**Runpod Template** :  https://www.runpod.io/console/explore/1gty0lb4lw
+- [Example](https://example.com).
+  
+# Documentation
+1. [Sense Overview](#overview)
 
-**To install the script, follow these steps:**
+## Contributing
 
-**Download the script:**
+Thank you for considering contributing to the Sense daemon! The contribution guide can be found in the [Laravel documentation]((https://github.com/CortexLM/sense)/docs/contributions).
 
-```wget -q https://raw.githubusercontent.com/CortexLM/sense/master/install.sh```
+## Code of Conduct
 
-**Make the script executable:**
+In order to ensure that the Sense/Flavia community is welcoming to all, please review and abide by the [Code of Conduct](https://github.com/CortexLM/sense/docs/contributions#code-of-conduct).
 
-```chmod  +x install.sh```
+## Security Vulnerabilities
 
-**Run the auto-installer:**
+If you discover a security vulnerability within Sense, please send an e-mail to the development team via [dev@cortex.foundation](mailto:dev@cortex.foundation). All security vulnerabilities will be promptly addressed.
 
-```./install.sh```
+## License
 
-**Initialize conda environment:**
-
-```bash```
-
-```conda activate sense```
-
-**Init Sense Directory:**
-
-```cd /srv/sense && sense init```
-
-**Generate config:**
-
-```sense config init```
-
-
-**Install Node.js and PM2:**
-
-```curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash```
-
-```export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"```
-
-```[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"```
-
-```nvm install --lts```
-
-```npm i pm2 -g```
-
-
-
-Then generate an API key, which will ask you to allocate the GPUs. You can allocate (1,2 or 4 GPUs) for the Diffusion model, and (1,2 or 4 GPUs). To allocate them, simply enter the GPU ID.
-
-For 8 GPUs :
-Diffusions: ```4,5,6,7```
-Turbomind ```0,1,2,3```
-
-**Run:**
-
-Miners ⛏️
-
-```pm2 start run.py --name sense -- --process_name sense_daemon --host 0.0.0.0 --port 8080```
-If an OOM error occurs, please modify --instance_num and decrease it.
-
-Validators 🥇
-
-```pm2 start run.py --name sense -- --process_name sense_daemon --host 0.0.0.0 --port 8080 --prevent_oom --instance_num 1```
-
-
-## 📋 Requirements
-
-### **Validators :**
-
-1x80GB GPU or 3x48GB GPU
-
-Storage: 300GB
-
-RAM: 32GB
-
-
-### **Miners :**
-
-8x 4090 GPUs
-
-Storage: 500GB
-
-RAM: 64GB
-
-
-## ⚖️ Support our Subnet: Assigning weights
-As a validator in the Bittensor network, your support is crucial for the success and efficiency of subnets like Flavia. We invite you to consider assigning weights to our subnet, which will significantly contribute to its performance and the overall robustness of the network.
-
-To allocate weights to the Flavia subnet, you can use the ```btcli root weights``` (**SN17**) command.
-
-By assigning weights to our subnet, you play a vital role in enhancing its inference capabilities and overall contribution to the BitTensor network. Your support helps us maintain a high-performance, reliable, and efficient subnet for decentralized model inference.
-
-We appreciate your contribution and thank you for your support in advancing decentralized AI with Flavia.
-
-
-
-
-## 📜 License
-This repository is licensed under the MIT License.
+The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 ```text
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
